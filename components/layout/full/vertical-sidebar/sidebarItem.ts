@@ -17,77 +17,100 @@ export interface menu {
     disabled?: boolean;
     type?: string;
     subCaption?: string;
+    roles?: number[];
 }
 
 const sidebarItem: menu[] = [
-    { header: 'Home' },
+    { header: 'Home' ,
+     roles: [1, 2, 3, 4, 5, 6,7]
+     },
     {
         title: 'Home',
         icon: LayoutDashboardIcon,
-        to: '/dashboards'
+        to: '/dashboards',
+        roles: [1, 4, 5]
     },
     {
         title: 'Employee Dashboard',
         icon: LayoutDashboardIcon,
-        to: '/dashboards/employeeDashboard'
+        to: '/dashboards/employeeDashboard',
+        roles: [1, 2, 3, 4, 5, 6,7]
+
     },
-    { header: 'Complaint' },
+    { header: 'Complaint' ,
+        roles: [1, 2, 3, 4, 5, 6,7]
+     },
     {
         title: 'Complaint', 
         icon: CirclePlusIcon,
-        to: '/complaint'
+        to: '/complaint',
+        roles: [1, 2, 3, 4, 5, 6,7]
     },
-    { header: 'Evaluation' },
+    { header: 'Evaluation' ,
+        roles: [1, 2, 3, 4, 5, 6,7]
+     },
     {
         title: 'Campaignes', 
         icon: CirclePlusIcon,
-        to: '/evaluation/camoaign'
+        to: '/evaluation/camoaign',
+        roles: [1, 4, 5]
     },
     {
         title: 'Questions',
         icon: CirclePlusIcon,
-        to: '/evaluation/questions'
+        to: '/evaluation/questions',
+        roles: [1, 4, 5]
     },
     {
         title: 'My Evaluations',
         icon: ExposurePlus1Icon,
-        to: '/evaluation/myEvaluation'
+        to: '/evaluation/myEvaluation',
+        roles: [1, 2, 3, 4, 5, 6,7]
     },
     {
         title: 'Received Evaluation',
         icon: ExposurePlus1Icon,
-        to: '/evaluation/receivedEvaluation'
+        to: '/evaluation/receivedEvaluation',
+        roles: [1, 2, 3, 4, 5, 6,7]
     },
     {
         title: 'All Evaluations',
         icon: ExposurePlus1Icon,
-        to: '/evaluation/evaluationReport'
+        to: '/evaluation/evaluationReport',
+        roles: [1, 4, 5]
     },
     {
         title: 'Evaluations Result',
         icon: ExposurePlus1Icon,
-        to: '/evaluation/evaluationResult'
+        to: '/evaluation/evaluationResult',
+        roles: [1, 4, 5]
     },
     {
         title: 'Evaluations',
         icon: ExposurePlus1Icon,
-        to: '/evaluation/evaluation'
+        to: '/evaluation/evaluation',
+        roles: [1, 2, 3, 4, 5, 6,7]
     },
-    { header: 'Hr' },
+    { header: 'Hr' , 
+        roles: [1, 4, 5]
+    },
     {
         title: 'Employees', 
         icon: UsersIcon,
-        to: '/hr/employees'
+        to: '/hr/employees',
+        roles: [1, 4, 5]
     },
     {
         title: 'Departments',
         icon: SectionIcon,
-        to: '/hr/departments'
+        to: '/hr/departments',
+        roles: [1, 4, 5]
     },
     {
         title: 'Feedbacks',
         icon: BrandHipchatIcon,
-        to: '/feedbacks'
+        to: '/feedbacks',
+        roles: [1, 4, 5]
     },
    
 ];
