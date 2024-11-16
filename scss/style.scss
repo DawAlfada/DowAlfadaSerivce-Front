@@ -1,0 +1,72 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&display=swap");
+@import './variables';
+@import 'vuetify/styles/main.sass';
+@import './override';
+@import './layout/container';
+@import './layout/sidebar';
+@import './layout/topbar';
+@import './components/VButtons';
+@import './components/VCard';
+@import './components/VInput';
+@import './components/VNavigationDrawer';
+@import './components/VShadow';
+@import './components/VTextField';
+@import './pages/dashboards';
+@import './pages/auth';
+@import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css';
+
+.managerIcon {
+    font-size: 20px;
+}
+// manager icon after
+.managerIcon:after {
+    font-size: 20px;   
+}
+
+.errormessage {
+    background: #ff00002e;
+    text-align: center;
+    color: #9b3535;
+}
+
+.sidebarMenuLogo {
+    padding-top: 20px;
+    text-align: center;
+}
+
+
+.bg-error {
+    margin: 15px;
+}
+
+.bg-success {
+    margin: 15px;
+}
+
+.jot-title {
+    font-size: 15px;
+    color: #878787;
+}
+
+.employee-table-info {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+td {
+    padding: 15px;
+}
+
+.btn {
+    cursor: pointer;
+}
+
+
+hr {
+    border: none;
+    height: 2px;
+    background: linear-gradient(to right, #0a5560, #0ff);
+    margin: 20px 0;
+    border-radius: 5px;
+  }
