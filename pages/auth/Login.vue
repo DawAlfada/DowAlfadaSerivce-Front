@@ -3,6 +3,10 @@
 definePageMeta({
   layout: "blank",
 });
+useHead({
+  title: "Login",
+});
+
 </script>
 <template>
     <div class="authentication">
