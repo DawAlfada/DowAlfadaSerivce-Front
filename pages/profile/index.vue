@@ -49,16 +49,13 @@ const changePassword = async () => {
     }
 
     try {
-        const response = await fetch(`${config.public.apiUrl}/Auth/ChangePassword`, {
-            method: 'POST',
+        const response = await fetch(`${config.public.apiUrl}/Employee/ChangePassword?oldPassword=${passwordInfo.value.oldPassword}&newPassword=${passwordInfo.value.newPassword}`, {
+            method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${userStore.token}`
-            },
-            body: JSON.stringify({
-                oldPassword: passwordInfo.value.oldPassword,
-                newPassword: passwordInfo.value.newPassword
-            })
+            }
+           
         });
 
         if (!response.ok) {
@@ -205,6 +202,12 @@ const changePassword = async () => {
 
                                 <!-- Change Password Section -->
                                 <v-card variant="flat" class="border rounded mt-4">
+                                    <v-alert v-if="errorMessage" type="error" variant="tonal" closable class="mb-4">
+                        {{ errorMessage }}
+                    </v-alert>
+                    <v-alert v-if="successMessage" type="success" variant="tonal" closable class="mb-4">
+                        {{ successMessage }}
+                    </v-alert>
                                     <v-card-title class="text-h6 font-weight-medium px-6 py-4">
                                         Change Password
                                     </v-card-title>
