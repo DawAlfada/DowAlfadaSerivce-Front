@@ -32,6 +32,7 @@ watch([errorMessage, successMessage], () => {
 const complaintInfo = ref({
   complaintStatus: 1,
   id: null,
+
 });
 
 const openDialogStatus = (info) => {
@@ -45,6 +46,7 @@ const searchTerm = ref("");
 
 const searchByInfo = ref({
   complaintStatus: null,
+  isOutSideComplaint: "",
 });
 
 watch(searchByInfo, () => {
@@ -73,7 +75,7 @@ const fetchComplaints = async () => {
   loading.value = true;
   try {
     const response = await fetch(
-      `${config.public.apiUrl}/Complaint?Page=${currentPage.value}&PageSize=${pageSize.value}&Title=${searchTerm.value}&ComplaintStatus=${searchByInfo.value.complaintStatus == null ? "" : searchByInfo.value.complaintStatus}`,
+      `${config.public.apiUrl}/Complaint?Page=${currentPage.value}&PageSize=${pageSize.value}&Title=${searchTerm.value}&ComplaintStatus=${searchByInfo.value.complaintStatus == null ? "" : searchByInfo.value.complaintStatus}&IsOutSideComplaint=${searchByInfo.value.isOutSideComplaint}`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -437,6 +439,19 @@ onMounted(() => {
                 @input="fetchComplaints"
               ></v-text-field>
             </v-col>
+            <!-- IsOutSideComplaint filter -->
+            <v-col cols="12" sm="6" md="4" v-if="userStore.user.role == 1 || userStore.user.role == 4 || userStore.user.role == 5">
+              <v-select
+                v-model="searchByInfo.isOutSideComplaint"
+                :items="[
+                  { text: 'All', value: ''},
+                  { text: 'Yes', value: true },
+                   { text: 'No', value: false }]"
+                item-title="text"
+                item-value="value"
+                label="Filter by OutSide Complaint"
+              ></v-select>
+            </v-col>
             <!-- ComplaintStatus filter -->
             <v-col cols="12" sm="6" md="4">
               <v-select
@@ -452,7 +467,7 @@ onMounted(() => {
           <v-table density="compact">
   <thead>
     <tr>
-      <th class="text-left">Employee</th>
+      <th class="text-left">Full Name</th>
       <th class="text-left">Title</th>
       <th class="text-left">Description</th>
       <th class="text-left">Against Employee</th>
@@ -465,7 +480,10 @@ onMounted(() => {
   <tbody>
     <tr v-for="complaint in complaints" :key="complaint.id" class="hover:bg-gray-100">
       <td>
-        <div v-if="complaint.employee != null" class="employee-table-info">
+        <div v-if="complaint.isOutSideComplaint == true" >
+         {{ complaint.fullName }}
+        </div>
+        <div v-if="complaint.employee != null && complaint.isOutSideComplaint == false" class="employee-table-info">
           <v-avatar size="40" class="mr-4" v-if="complaint.employee.image512 != 'Anonymous'">
             <img :src="complaint.employee.image512 ? `data:image/svg+xml;base64,${complaint.employee.image512}` : 'fallback-image-url.jpg'" @error="handleImageError($event, complaint.employee.image512)" width="40" height="40" alt="user" class="avatar"/>
           </v-avatar>
@@ -480,7 +498,8 @@ onMounted(() => {
             <span class="jot-title">{{ complaint.employee.jobTitle }}</span>
           </div>
         </div>
-        <div v-else>-</div>
+        <div v-if="complaint.employee != null && complaint.isOutSideComplaint == true">-</div>
+        <div v-else></div>
       </td>
       <td>{{ complaint.title }}</td>
       <td>
