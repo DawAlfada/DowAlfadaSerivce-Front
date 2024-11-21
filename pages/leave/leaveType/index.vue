@@ -2,16 +2,15 @@
 import { ref, onMounted, computed, watch } from "vue";
 import { useUserStore } from "@/store/user"; // Import the store
 import UiParentCard from "@/components/shared/UiParentCard.vue";
-import { useRuntimeConfig } from '#app';
+import { useRuntimeConfig } from "#app";
 
 const config = useRuntimeConfig();
 const userStore = useUserStore();
 
 definePageMeta({
-  requiresAdmin: true, 
+  requiresAdmin: true,
   title: "Evaluation VacationType",
 });
-
 
 const VacationType = ref([]);
 const totalCount = ref(0);
@@ -20,7 +19,7 @@ const errorMessage = ref(false);
 const successMessage = ref(false);
 const workTypeDialog = ref(false);
 const worktype = ref([]);
-
+const workTypes = ref([]);
 
 const showWorkTypes = (workTypes) => {
   workTypeDialog.value = true;
@@ -57,7 +56,7 @@ const fetchVacationType = async () => {
       {
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${userStore.token}`, // Use the token from the store
+          Authorization: `Bearer ${userStore.token}`, // Use the token from the store
         },
       }
     );
@@ -80,11 +79,11 @@ const filteredVacationType = computed(() => {
 });
 
 const submitVacationType = async () => {
-   errorMessage.value = ""; 
-   successMessage.value = "";
+  errorMessage.value = "";
+  successMessage.value = "";
 
   if (!newVacationType.value.name) {
-    errorMessage.value = "Please fill in Work Type Name fields";
+    errorMessage.value = "Please fill in Leave Type Name fields";
     return;
   }
 
@@ -93,14 +92,10 @@ const submitVacationType = async () => {
     return;
   }
 
-    if (!newVacationType.value.leaveDaysInYear) {
-        errorMessage.value = "Please fill in Leave Days In Year fields";
-        return;
-    }
-
-
-
- 
+  if (!newVacationType.value.leaveDaysInYear) {
+    errorMessage.value = "Please fill in Leave Days In Year fields";
+    return;
+  }
 
   loading.value = true;
   try {
@@ -113,7 +108,7 @@ const submitVacationType = async () => {
       method,
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${userStore.token}`, // Use the token for authorization
+        Authorization: `Bearer ${userStore.token}`, // Use the token for authorization
       },
       body: JSON.stringify(newVacationType.value),
     });
@@ -147,7 +142,7 @@ const deleteVacationType = async () => {
       {
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${userStore.token}`, // Use the token here as well
+          Authorization: `Bearer ${userStore.token}`, // Use the token here as well
         },
       }
     );
@@ -176,15 +171,40 @@ const resetForm = () => {
   editingVacationTypeId.value = null;
 };
 
+const fetchWorkTypes = async () => {
+  loading.value = true;
+  try {
+    const response = await fetch(
+      `${config.public.apiUrl}/WorkType?Page=${currentPage.value}&PageSize=50`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userStore.token}`,
+        },
+      }
+    );
+    const data = await response.json();
+    if (!data.error) {
+      workTypes.value = data.data.items;
+      totalCount.value = data.data.totalCount;
+    }
+  } catch (error) {
+    errorMessage.value = "Failed to fetch workTypes";
+  } finally {
+    loading.value = false;
+  }
+};
+
 onMounted(() => {
-    fetchVacationType();
+  fetchVacationType();
+  fetchWorkTypes();
 });
 </script>
 
 <template>
   <v-row>
     <v-col cols="12" md="12">
-      <UiParentCard title="Manage Work Types">
+      <UiParentCard title="Manage Leave Types">
         <v-alert v-if="errorMessage" type="error" dismissible>{{
           errorMessage
         }}</v-alert>
@@ -192,115 +212,154 @@ onMounted(() => {
           successMessage
         }}</v-alert>
 
-<v-form @submit.prevent="submitVacationType">
-      <v-container class="mb-6">
-        <v-row>
-          <v-col cols="12" sm="6" md="3">
-            <v-text-field
-              v-model="newVacationType.name"
-              label="Work Type Name"
-              required
-            ></v-text-field>
-          </v-col>
-          <v-col cols="12" sm="6" md="3">
-            <v-text-field
-              v-model="newVacationType.workDaysInWeek"
-              type="number"
-              label="Work Days In Week"
-              required
-            ></v-text-field>
-          </v-col>
-          <v-col cols="12" sm="6" md="3">
-            <v-text-field
-              type="number"
-              v-model="newVacationType.leaveDaysInYear"
-              label="Leave Days In Year"
-              required
-            ></v-text-field>
-          </v-col>
-    
-        </v-row>
-        <v-btn
-          :loading="loading"
-          type="submit"
-          color="primary"
-          class="mr-2"
-        >
-          {{ isEditing ? "Update Work Type" : "Create Work Type" }}
-        </v-btn>
-        <v-btn @click="resetForm" color="secondary" :disabled="loading"
-          >Cancel</v-btn
-        >
-      </v-container>
-    </v-form>
-    <v-container>
-      <v-row class="mb-4">
-        <v-col cols="12" sm="6" md="4">
-          <v-text-field
-            v-model="searchTerm"
-            label="Search by VacationType Name"
+        <v-form @submit.prevent="submitVacationType">
+          <v-container class="mb-6">
+            <v-row>
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="newVacationType.name"
+                  label="Leave Type Name"
+                  required
+                ></v-text-field>
+              </v-col>
+
+              <v-col cols="12" sm="6" md="3">
+                <v-select
+                  v-model="newVacationType.workTypeIds"
+                  :items="workTypes"
+                  item-title="name"
+                  item-value="id"
+                  label="Work Type"
+                  multiple
+                >
+                </v-select>
+              </v-col>
+
+              <v-col cols="12" sm="6" md="3" >
+                <v-select
+                  v-model="newVacationType.isWithoutSalary"
+                  :items="[
+                    { text: 'With Out Salary', value: true },
+                    { text: 'With Salary', value: false },
+                  ]"
+                  label="Is Without Salary"
+                  item-title="text"
+                  item-value="value"
+                  required
+                ></v-select>
+              </v-col>
+
+              <v-col cols="12" sm="6" md="3" v-if="newVacationType.workTypeIds == null || newVacationType.workTypeIds.length == 0 ">
+                <v-text-field
+                  type="number"
+                  v-model="newVacationType.leaveDaysInYear"
+                  label="Leave Days In Year"
+                  required
+                ></v-text-field>
+              </v-col>
+      
+              <v-col cols="12" sm="6" md="3" v-if="newVacationType.workTypeIds == null || newVacationType.workTypeIds.length == 0" >
+                <v-select
+                  v-model="newVacationType.leaveBased"
+                  :items="[
+                    { text: 'Day Based Leave', value: 0 },
+                    { text: 'Hour Based Leave', value: 1 },
+                  ]"
+                  label="Leave Based"
+                  item-title="text"
+                  item-value="value"
+                  required
+                ></v-select>
+              </v-col>
+
+              <!-- work type list -->
+            </v-row>
+            <v-btn
+              :loading="loading"
+              type="submit"
+              color="primary"
+              class="mr-2"
+            >
+              {{ isEditing ? "Update Leave Type" : "Create Leave Type" }}
+            </v-btn>
+            <v-btn @click="resetForm" color="secondary" :disabled="loading"
+              >Cancel</v-btn
+            >
+          </v-container>
+        </v-form>
+        <v-container>
+          <v-row class="mb-4">
+            <v-col cols="12" sm="6" md="4">
+              <v-text-field
+                v-model="searchTerm"
+                label="Search by VacationType Name"
+                @input="fetchVacationType"
+              ></v-text-field>
+            </v-col>
+          </v-row>
+
+          <v-table density="compact">
+            <thead>
+              <tr>
+                <th class="text-left">Name</th>
+                <th class="text-left">Leave Days In Year</th>
+                <th class="text-left">Leave Based</th>
+                <th class="text-left">Insert Date</th>
+                <th class="text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in filteredVacationType" :key="item.id">
+                <td>{{ item.name }}</td>
+                <td>
+                  <span
+                    v-if="item.leaveDaysInYear == 0"
+                    @click="showWorkTypes(item.workTypes)"
+                    >Depends on the type of work
+                  </span>
+                  <span v-else>{{ item.leaveDaysInYear }}</span>
+                </td>
+                <td>
+                  <span v-if="item.leaveBased == 0"> Day Based Leave</span>
+                  <span v-else> Hour Based Leave</span>
+                </td>
+                <td>{{ item.createdAt.toString().split("T")[0] }}</td>
+                <td>
+                  <v-btn
+                    density="default"
+                    icon="mdi-open-in-new"
+                    @click="
+                      isEditing = true;
+                      editingVacationTypeId = item.id;
+                      item.name = item.name;
+                      item.workDaysInWeek = item.workDaysInWeek;
+                      item.leaveDaysInYear = item.leaveDaysInYear;
+                      newVacationType = { ...item };
+                    "
+                    color="success"
+                    class="ma-2"
+                  ></v-btn>
+
+                  <v-btn
+                    density="default"
+                    icon="mdi-delete"
+                    @click="confirmdeleteVacationType(item)"
+                    color="red"
+                    class="ma-2"
+                  ></v-btn>
+                </td>
+              </tr>
+            </tbody>
+          </v-table>
+          <v-pagination
+            v-model="currentPage"
+            :length="totalPages"
             @input="fetchVacationType"
-          ></v-text-field>
-        </v-col>
-      </v-row>
-
-      <v-table density="compact">
-        <thead>
-          <tr>
-            <th class="text-left">Name</th>
-            <th class="text-left">Leave Days In Year</th>
-            <th class="text-left">Leave Based</th>
-            <th class="text-left">Insert Date</th>
-            <th class="text-left">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in filteredVacationType" :key="item.id">
-            <td>{{ item.name }}</td>
-            <td><span v-if="item.leaveDaysInYear == 0" @click="showWorkTypes(item.workTypes)">Depends on the type of work </span>
-              <span v-else>{{ item.leaveDaysInYear }}</span>
-            
-            </td>
-            <td><span v-if="item.leaveBased == 0"> Day Based Leave</span>
-              <span v-else> Hour Based Leave</span>
-            </td>
-            <td>{{ item.createdAt.toString().split("T")[0] }}</td>
-            <td>
-              <v-btn
-                density="default"
-                icon="mdi-open-in-new"
-                @click="
-                  isEditing = true;
-                  editingVacationTypeId = item.id;
-                  item.name = item.name;
-                  item.workDaysInWeek = item.workDaysInWeek;
-                  item.leaveDaysInYear = item.leaveDaysInYear;                
-                  newVacationType = { ...item };
-                "
-                color="success"
-                class="ma-2"
-              ></v-btn>
-
-              <v-btn
-                density="default"
-                icon="mdi-delete"
-                @click="confirmdeleteVacationType(item)"
-                color="red"
-                class="ma-2"
-              ></v-btn>
-            </td>
-          </tr>
-        </tbody>
-      </v-table>
-      <v-pagination
-        v-model="currentPage"
-        :length="totalPages"
-        @input="fetchVacationType"
-        class="mt-4"
-      ></v-pagination>
-    </v-container>
-  </UiParentCard>
-</v-col>
+            class="mt-4"
+          ></v-pagination>
+        </v-container>
+      </UiParentCard>
+    </v-col>
   </v-row>
   <!--  worktype dialog -->
   <v-dialog v-model="workTypeDialog" max-width="400">
@@ -308,7 +367,9 @@ onMounted(() => {
       <v-card-title class="headline"> </v-card-title>
       <v-card-text></v-card-text>
       <v-card-actions>
-        <v-btn color="primary" text @click="workTypeDialog = false">Cancel</v-btn>
+        <v-btn color="primary" text @click="workTypeDialog = false"
+          >Cancel</v-btn
+        >
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -316,7 +377,9 @@ onMounted(() => {
   <v-dialog v-model="deleteDialog" max-width="400">
     <v-card>
       <v-card-title class="headline">Confirm Deletion</v-card-title>
-      <v-card-text>Are you sure you want to delete this VacationType?</v-card-text>
+      <v-card-text
+        >Are you sure you want to delete this VacationType?</v-card-text
+      >
       <v-card-actions>
         <v-btn color="primary" text @click="deleteDialog = false">Cancel</v-btn>
         <v-btn color="red" text @click="deleteVacationType">Delete</v-btn>
