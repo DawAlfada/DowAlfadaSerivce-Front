@@ -12,6 +12,15 @@ definePageMeta({
   title: "Evaluation VacationType",
 });
 
+
+watch([errorMessage, successMessage], () => {
+  if (errorMessage.value || successMessage.value) {
+    setTimeout(() => {
+      errorMessage.value = null;
+      successMessage.value = null;
+    }, 4000);
+  }
+});
 const VacationType = ref([]);
 const totalCount = ref(0);
 const loading = ref(false);
@@ -128,7 +137,7 @@ const submitVacationType = async () => {
   }
 };
 
-const confirmdeleteVacationType = (VacationType) => {
+const confirmDeleteVacationType = (VacationType) => {
   VacationTypeToDelete.value = VacationType;
   deleteDialog.value = true;
 };
@@ -326,64 +335,80 @@ onMounted(() => {
           </v-row>
 
           <v-table density="compact" class="custom-table">
-  <thead>
-    <tr>
-      <th class="text-left">Name</th>
-      <th class="text-left">Leave Days In Year</th>
-      <th class="text-left">Hours Per Month</th>
-      <th class="text-left">Leave Based</th>
-      <th class="text-left">Insert Date</th>
-      <th class="text-left">Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr
-      v-for="item in filteredVacationType"
-      :key="item.id"
-      :class="{'highlight-row': item.leaveBased === 0, 'default-row': item.leaveBased !== 0}"
-    >
-      <td>{{ item.name }}</td>
-      <td>
-        <span
-          v-if="item.workTypes && item.workTypes.length > 0 && item.leaveBased === 0"
-          @click="showWorkTypes(item.workTypes)"
-          class="clickable-text"
-        >
-          Depends on the type of work
-        </span>
-        <span v-else>{{ item.leaveDaysInYear }} Day</span>
-      </td>
-      <td>
-        <span v-if="item.hoursPerMonth === null && item.leaveBased === 0">-</span>
-        <span v-else>{{ item.hoursPerMonth }} Hour</span>
-      </td>
-      <td>
-        <span v-if="item.leaveBased === 0" class="day-based">Day Based Leave</span>
-        <span v-else class="hour-based">Hour Based Leave</span>
-      </td>
-      <td>{{ item.createdAt.split("T")[0] }}</td>
-      <td>
-        <v-btn
-          density="default"
-          icon="mdi-open-in-new"
-          @click="editVacationType(item)"
-          color="success"
-          class="ma-2"
-        ></v-btn>
-
-        <v-btn
-          density="default"
-          icon="mdi-delete"
-          @click="confirmDeleteVacationType(item)"
-          color="red"
-          class="ma-2"
-        ></v-btn>
-      </td>
-    </tr>
-  </tbody>
-</v-table>
-
-        
+            <thead>
+              <tr>
+                <th class="text-left">Name</th>
+                <th class="text-left">Leave Days In Year</th>
+                <th class="text-left">Hours Per Month</th>
+                <th class="text-left">Leave Based</th>
+                <th class="text-left">Insert Date</th>
+                <th class="text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="item in filteredVacationType"
+                :key="item.id"
+                :class="{
+                  'highlight-row': item.leaveBased === 0,
+                  'default-row': item.leaveBased !== 0,
+                }"
+              >
+                <td>{{ item.name }}</td>
+                <td>
+                  <span
+                    v-if="
+                      item.workTypes &&
+                      item.workTypes.length > 0 &&
+                      item.leaveBased === 0
+                    "
+                    @click="showWorkTypes(item.workTypes)"
+                    class="clickable-text"
+                  >
+                    Depends on the type of work
+                  </span>
+                  <span v-else-if="item.leaveBased === 0"
+                    >{{ item.leaveDaysInYear }} Day</span
+                  >
+                  <span v-else>-</span>
+                </td>
+                <td>
+                  <span
+                    v-if="item.hoursPerMonth === null && item.leaveBased === 0"
+                    >-</span
+                  >
+                  <span v-else>{{ item.hoursPerMonth }} Hour</span>
+                </td>
+                <td>
+                  <span v-if="item.leaveBased === 0" class="day-based"
+                    >Day Based Leave</span
+                  >
+                  <span v-else class="hour-based">Hour Based Leave</span>
+                </td>
+                <td>{{ item.createdAt.split("T")[0] }}</td>
+                <td>
+                  <v-btn
+                    density="default"
+                    icon="mdi-open-in-new"
+                    @click="
+                      isEditing = true;
+                      editingVacationTypeId = item.id;
+                      newVacationType = { ...item };
+                    "
+                    color="success"
+                    class="ma-2"
+                  ></v-btn>
+                  <v-btn
+                    density="default"
+                    icon="mdi-delete"
+                    @click="confirmDeleteVacationType(item)"
+                    color="red"
+                    class="ma-2"
+                  ></v-btn>
+                </td>
+              </tr>
+            </tbody>
+          </v-table>
 
           <v-pagination
             v-model="currentPage"
@@ -399,7 +424,22 @@ onMounted(() => {
   <v-dialog v-model="workTypeDialog" max-width="400">
     <v-card>
       <v-card-title class="headline"> </v-card-title>
-      <v-card-text></v-card-text>
+      <v-card-text>
+        <!-- list of worktype -->
+        <v-list>
+          <v-list-item-group>
+            <v-list-item
+              v-for="item in worktype"
+              :key="item.id"
+              @click="workTypeDialog = false"
+            >
+              <v-list-item-content>
+                <v-list-item-title>{{ item.name }}</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+          </v-list-item-group>
+        </v-list>
+      </v-card-text>
       <v-card-actions>
         <v-btn color="primary" text @click="workTypeDialog = false"
           >Cancel</v-btn
@@ -422,8 +462,6 @@ onMounted(() => {
   </v-dialog>
 </template>
 <style scoped>
-
-
 .custom-table .clickable-text {
   color: #007bff;
   cursor: pointer;
@@ -460,4 +498,3 @@ onMounted(() => {
   transform: scale(1.1);
 }
 </style>
-
