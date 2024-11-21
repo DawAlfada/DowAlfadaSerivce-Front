@@ -30,6 +30,7 @@ const showEditInfoDialog = ref(false);
 const currentPage = ref(1);
 const pageSize = ref(10);
 const totalPages = computed(() => Math.ceil(totalCount.value / pageSize.value));
+const workTypes = ref([]);
 
 const handleImageError = (event, fallbackImage) => {
   event.target.src = `data:image/jpeg;base64,${fallbackImage}`;
@@ -46,6 +47,7 @@ const employeeSearchInfo = ref({
 onMounted(() => {
   fetchEmployees();
   fetchDepartments();
+  fetchWorkTypes();
 });
 
 const selectedDepartment = (departmentId) => {
@@ -54,8 +56,29 @@ const selectedDepartment = (departmentId) => {
 };
 
 
-// upload employee role
-
+const fetchWorkTypes = async () => {
+  loading.value = true;
+  try {
+    const response = await fetch(
+      `${config.public.apiUrl}/WorkType?Page=${currentPage.value}&PageSize=50`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${userStore.token}`, 
+        },
+      }
+    );
+    const data = await response.json();
+    if (!data.error) {
+      workTypes.value = data.data.items;
+      totalCount.value = data.data.totalCount;
+    }
+  } catch (error) {
+    errorMessage.value = "Failed to fetch workTypes";
+  } finally {
+    loading.value = false;
+  }
+};
 
 
 const roles = [
@@ -81,13 +104,18 @@ const updateInfo = async () => {
 
   try {
     const response = await fetch(
-      `${config.public.apiUrl}/Employee/EditRole?id=${editingEmployee.value.id}&role=${editingEmployee.value.role}`,
+      `${config.public.apiUrl}/Employee?id=${editingEmployee.value.id}`,
       {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${userStore.token}`,
         },
+        body: JSON.stringify({
+          role: editingEmployee.value.role,
+          workTypeId: editingEmployee.value.workTypeId,
+          directDate: editingEmployee.value.directDate,
+        }),
       }
     );
 
@@ -114,6 +142,9 @@ watch([errorMessage, successMessage], () => {
     }, 4000);
   }
 });
+
+
+
 
 
 const employees = ref([]);
@@ -161,7 +192,6 @@ const filteredEmployees = computed(() => {
 
 
 
-// Modal states
 const showEditDialog = ref(false);
 const showEmailDialog = ref(false);
 const showDetailsDialog = ref(false);
@@ -172,11 +202,20 @@ const emailMessage = ref("");
 const employeeTotalCount = ref(0);
 
 
+const ShowUpdateDialog = (item) => {
+     showEditInfoDialog.value = true;
+      editingEmployee.value = item;
+      editingEmployee.value.workTypeId = item.workType != null ? item.workType.id : null;
+      editingEmployee.value.directDate = item.directDate != null ? item.directDate.toString().split("T")[0] : null;
+     
+}
+
+
+
 const  syncEmployees = async () => {
   loading.value = true;
   errorMessage.value = null;
  
-  // add message to show that the employees are being synced and may take a while
   successMessage.value = "Syncing employees, this may take a while";
   try {
     const response = await fetch(
@@ -438,10 +477,7 @@ const fetchDepartments = async () => {
     color="primary"
     outlined
     class="mx-2"
-    @click="
-      showEditInfoDialog = true;
-      editingEmployee = item;
-    "
+    @click="ShowUpdateDialog(item)"
   >
     <v-icon left>mdi-pencil</v-icon>
     Update Info
@@ -507,6 +543,19 @@ const fetchDepartments = async () => {
         ></v-select>
         
         </div>
+        <!-- workTypes  -->
+        <v-select
+          v-model="editingEmployee.workTypeId"
+          :items="workTypes"
+          item-title="name"
+          item-value="id"
+          label="Work Type"
+          > </v-select>
+          <v-text-field
+            v-model="editingEmployee.directDate"
+            label="Direct Date"
+            type="date"
+            > </v-text-field>
       
       </v-card-text>
       <v-card-actions>
@@ -556,6 +605,12 @@ const fetchDepartments = async () => {
               {{ employeeDetails?.odooEmployeeId || "-" }}
             </p>
             <p><strong>Gender:</strong> {{ employeeDetails?.gender || "-" }}</p>
+            <!-- brithday -->
+            <p>
+              <strong>Brithday:</strong>
+              {{ employeeDetails?.birthday != false ? employeeDetails?.birthday?.split("T")[0] || "-"  : "-" }}
+
+            </p>
           </v-col>
         </v-row>
 
@@ -576,12 +631,10 @@ const fetchDepartments = async () => {
             </p>
           </v-col>
           <v-col cols="6">
+  
             <p>
-              <strong>Department Color:</strong>
-              <span
-                :style="{ color: `#${employeeDetails?.departmentColor}` }"
-                >{{ employeeDetails?.departmentColor || "-" }}</span
-              >
+              <strong>Direct Date:</strong>
+              {{ employeeDetails?.directDate != null ? employeeDetails?.directDate?.split("T")[0] || "-"  : "-" }}
             </p>
             <p>
               <strong>Created At:</strong>

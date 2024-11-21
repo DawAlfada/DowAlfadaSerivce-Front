@@ -37,9 +37,25 @@ const sidebarItem: menu[] = [
         roles: [1, 2, 3, 4, 5, 6,7]
 
     },
+    { header: 'Leave' ,
+        roles: [1, 2, 3, 4, 5, 6,7]
+    },
+    {
+        title: 'Leave', 
+        icon: CirclePlusIcon,
+        to: '/leave',
+        roles: [1, 2, 3, 4, 5, 6,7]
+    },
+    {
+        title: 'Leave Tpyes', 
+        icon: CirclePlusIcon,
+        to: '/leave/leaveType',
+        roles: [1, 4, 5]
+    },
+
     { header: 'Complaint' ,
         roles: [1, 2, 3, 4, 5, 6,7]
-     },
+    },
     {
         title: 'Complaint', 
         icon: CirclePlusIcon,
@@ -104,6 +120,12 @@ const sidebarItem: menu[] = [
         title: 'Departments',
         icon: SectionIcon,
         to: '/hr/departments',
+        roles: [1, 4, 5]
+    },
+    {
+        title: 'WorkType',
+        icon: SectionIcon,
+        to: '/hr/workType',
         roles: [1, 4, 5]
     },
     {
