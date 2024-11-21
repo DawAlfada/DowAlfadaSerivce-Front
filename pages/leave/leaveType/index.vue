@@ -87,12 +87,12 @@ const submitVacationType = async () => {
     return;
   }
 
-  if (!newVacationType.value.workDaysInWeek) {
-    errorMessage.value = "Please fill in Work Days In Week fields";
-    return;
-  }
-
-  if (!newVacationType.value.leaveDaysInYear) {
+  if (
+    !newVacationType.value.leaveDaysInYear &&
+    newVacationType.value.leaveBased == 0 &&
+    (newVacationType.value.workTypeIds == null ||
+      newVacationType.value.workTypeIds.length == 0)
+  ) {
     errorMessage.value = "Please fill in Leave Days In Year fields";
     return;
   }
@@ -225,6 +225,25 @@ onMounted(() => {
 
               <v-col cols="12" sm="6" md="3">
                 <v-select
+                  v-model="newVacationType.leaveBased"
+                  :items="[
+                    { text: 'Day Based Leave', value: 0 },
+                    { text: 'Hour Based Leave', value: 1 },
+                  ]"
+                  label="Leave Based"
+                  item-title="text"
+                  item-value="value"
+                  required
+                ></v-select>
+              </v-col>
+
+              <v-col
+                cols="12"
+                sm="6"
+                md="3"
+                v-if="newVacationType.leaveBased == 0"
+              >
+                <v-select
                   v-model="newVacationType.workTypeIds"
                   :items="workTypes"
                   item-title="name"
@@ -235,7 +254,7 @@ onMounted(() => {
                 </v-select>
               </v-col>
 
-              <v-col cols="12" sm="6" md="3" >
+              <v-col cols="12" sm="6" md="3">
                 <v-select
                   v-model="newVacationType.isWithoutSalary"
                   :items="[
@@ -249,7 +268,16 @@ onMounted(() => {
                 ></v-select>
               </v-col>
 
-              <v-col cols="12" sm="6" md="3" v-if="newVacationType.workTypeIds == null || newVacationType.workTypeIds.length == 0 ">
+              <v-col
+                cols="12"
+                sm="6"
+                md="3"
+                v-if="
+                  (newVacationType.workTypeIds == null ||
+                    newVacationType.workTypeIds.length == 0) &
+                  (newVacationType.leaveBased == 0)
+                "
+              >
                 <v-text-field
                   type="number"
                   v-model="newVacationType.leaveDaysInYear"
@@ -257,23 +285,22 @@ onMounted(() => {
                   required
                 ></v-text-field>
               </v-col>
-      
-              <v-col cols="12" sm="6" md="3" v-if="newVacationType.workTypeIds == null || newVacationType.workTypeIds.length == 0" >
-                <v-select
-                  v-model="newVacationType.leaveBased"
-                  :items="[
-                    { text: 'Day Based Leave', value: 0 },
-                    { text: 'Hour Based Leave', value: 1 },
-                  ]"
-                  label="Leave Based"
-                  item-title="text"
-                  item-value="value"
-                  required
-                ></v-select>
-              </v-col>
 
-              <!-- work type list -->
+              <v-col
+                cols="12"
+                sm="6"
+                md="3"
+                v-if="newVacationType.leaveBased == 1"
+              >
+                <v-text-field
+                  type="number"
+                  v-model="newVacationType.hoursPerMonth"
+                  label="Hours Per Month"
+                  required
+                ></v-text-field>
+              </v-col>
             </v-row>
+
             <v-btn
               :loading="loading"
               type="submit"
@@ -298,59 +325,66 @@ onMounted(() => {
             </v-col>
           </v-row>
 
-          <v-table density="compact">
-            <thead>
-              <tr>
-                <th class="text-left">Name</th>
-                <th class="text-left">Leave Days In Year</th>
-                <th class="text-left">Leave Based</th>
-                <th class="text-left">Insert Date</th>
-                <th class="text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="item in filteredVacationType" :key="item.id">
-                <td>{{ item.name }}</td>
-                <td>
-                  <span
-                    v-if="item.leaveDaysInYear == 0"
-                    @click="showWorkTypes(item.workTypes)"
-                    >Depends on the type of work
-                  </span>
-                  <span v-else>{{ item.leaveDaysInYear }}</span>
-                </td>
-                <td>
-                  <span v-if="item.leaveBased == 0"> Day Based Leave</span>
-                  <span v-else> Hour Based Leave</span>
-                </td>
-                <td>{{ item.createdAt.toString().split("T")[0] }}</td>
-                <td>
-                  <v-btn
-                    density="default"
-                    icon="mdi-open-in-new"
-                    @click="
-                      isEditing = true;
-                      editingVacationTypeId = item.id;
-                      item.name = item.name;
-                      item.workDaysInWeek = item.workDaysInWeek;
-                      item.leaveDaysInYear = item.leaveDaysInYear;
-                      newVacationType = { ...item };
-                    "
-                    color="success"
-                    class="ma-2"
-                  ></v-btn>
+          <v-table density="compact" class="custom-table">
+  <thead>
+    <tr>
+      <th class="text-left">Name</th>
+      <th class="text-left">Leave Days In Year</th>
+      <th class="text-left">Hours Per Month</th>
+      <th class="text-left">Leave Based</th>
+      <th class="text-left">Insert Date</th>
+      <th class="text-left">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr
+      v-for="item in filteredVacationType"
+      :key="item.id"
+      :class="{'highlight-row': item.leaveBased === 0, 'default-row': item.leaveBased !== 0}"
+    >
+      <td>{{ item.name }}</td>
+      <td>
+        <span
+          v-if="item.workTypes && item.workTypes.length > 0 && item.leaveBased === 0"
+          @click="showWorkTypes(item.workTypes)"
+          class="clickable-text"
+        >
+          Depends on the type of work
+        </span>
+        <span v-else>{{ item.leaveDaysInYear }} Day</span>
+      </td>
+      <td>
+        <span v-if="item.hoursPerMonth === null && item.leaveBased === 0">-</span>
+        <span v-else>{{ item.hoursPerMonth }} Hour</span>
+      </td>
+      <td>
+        <span v-if="item.leaveBased === 0" class="day-based">Day Based Leave</span>
+        <span v-else class="hour-based">Hour Based Leave</span>
+      </td>
+      <td>{{ item.createdAt.split("T")[0] }}</td>
+      <td>
+        <v-btn
+          density="default"
+          icon="mdi-open-in-new"
+          @click="editVacationType(item)"
+          color="success"
+          class="ma-2"
+        ></v-btn>
 
-                  <v-btn
-                    density="default"
-                    icon="mdi-delete"
-                    @click="confirmdeleteVacationType(item)"
-                    color="red"
-                    class="ma-2"
-                  ></v-btn>
-                </td>
-              </tr>
-            </tbody>
-          </v-table>
+        <v-btn
+          density="default"
+          icon="mdi-delete"
+          @click="confirmDeleteVacationType(item)"
+          color="red"
+          class="ma-2"
+        ></v-btn>
+      </td>
+    </tr>
+  </tbody>
+</v-table>
+
+        
+
           <v-pagination
             v-model="currentPage"
             :length="totalPages"
@@ -387,3 +421,43 @@ onMounted(() => {
     </v-card>
   </v-dialog>
 </template>
+<style scoped>
+
+
+.custom-table .clickable-text {
+  color: #007bff;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.custom-table .highlight-row {
+  background-color: #e6f7ff;
+}
+
+.custom-table .default-row {
+  background-color: #ffffff;
+}
+
+.custom-table .day-based {
+  font-weight: bold;
+  color: #4caf50;
+}
+
+.custom-table .hour-based {
+  font-weight: bold;
+  color: #ff9800;
+}
+
+.custom-table tr:hover {
+  background-color: #f1f1f1;
+}
+
+.custom-table v-btn {
+  transition: transform 0.2s ease;
+}
+
+.custom-table v-btn:hover {
+  transform: scale(1.1);
+}
+</style>
+
