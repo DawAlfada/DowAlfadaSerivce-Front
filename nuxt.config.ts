@@ -1,28 +1,26 @@
 export default defineNuxtConfig({
   devtools: { enabled: true },
-  ssr: false, // Disable Server-Side Rendering
+  ssr: false,
   typescript: {
-    shim: false, // Disable TypeScript shims for better IntelliSense
+    shim: false,
   },
   build: {
-    transpile: ["vuetify"], // Ensure Vuetify is properly transpiled
+    transpile: ["vuetify"],
   },
-  // vite: {
-  //   define: {
-  //     "process.env.DEBUG": true, // Enable debugging during development
-  //   },
-  // },
+  vite: {
+    server: {
+      hmr: {
+        clientPort: 3000, // Replace with the desired port number (default: 3000)
+      },
+    },
+  },
   runtimeConfig: {
     public: {
-      apiUrl: process.env.VUE_APP_API_URL || 'https://default-url.com/api', // Default API URL
+      apiUrl: process.env.VUE_APP_API_URL || 'https://default-url.com/api',
     },
-    // Add private runtime variables if needed
   },
   plugins: [
     '~/plugins/pinia.js',
-    '~/plugins/sweetalert.js', // SweetAlert plugin for notifications
+    '~/plugins/sweetalert.js',
   ],
-  hooks: {
-    // Add any necessary Nuxt hooks here
-  },
 });

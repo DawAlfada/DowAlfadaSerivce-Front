@@ -8,7 +8,7 @@ const config = useRuntimeConfig();
 const userStore = useUserStore();
 const employeeLeaves = ref([]);
 const VacationType = ref([]);
- 
+
 const totalCount = ref(0);
 const loading = ref(false);
 const errorMessage = ref("");
@@ -33,43 +33,41 @@ watch([errorMessage, successMessage], () => {
 
 const LeaveInfo = ref({
   employeeLeavestatus: 1,
-  id: null,
+  managerDescription: "",
 
+  id: null,
 });
 
 const openDialogStatus = (info) => {
   dialogStatus.value = true;
-  LeaveInfo.value.employeeLeavestatus = info.employeeLeavestatus;
+  LeaveInfo.value.employeeLeavestatus = info.status;
   LeaveInfo.value.id = info.id;
-  
-  
 };
 const searchTerm = ref("");
 
 const searchByInfo = ref({
   employeeLeavestatus: null,
-  isOutSideLeave: "",
 });
 
-watch(searchByInfo, () => {
-  fetchEmployeeLeaves();
-},
-{ deep: true }
+watch(
+  searchByInfo,
+  () => {
+    fetchEmployeeLeaves();
+  },
+  { deep: true }
 );
 
-
 const newEmployeeLeave = ref({
-    VacationTypeId: null,
-    StartDate: "",
-    EndDate: "",
-    StartTime: "",
-    EndTime: "",
-    Description: "",
-    AttachmentFile : null,
+  vacationTypeId: null,
+  startDate: "",
+  endDate: "",
+  startTime: "",
+  endTime: "",
+  description: "",
+  attachmentFile: null,
 });
 const isEditing = ref(false);
 const editingLeaveId = ref(null);
-
 
 const deleteDialog = ref(false);
 const LeaveToDelete = ref(null);
@@ -122,19 +120,23 @@ const fetchVacationType = async () => {
   }
 };
 
+// watch vacationTypeId in newEmployeeLeave to change vacationTypes selected  
+
 
 const VacationBaseType = ref(null);
 
 const changeVacationType = (event) => {
   console.log(event);
-  newEmployeeLeave.value.VacationTypeId = event;
-  VacationBaseType.value = VacationType.value.find((x) => x.id == event).leaveBased;
-  console.log(newEmployeeLeave.value.VacationTypeId);
+  newEmployeeLeave.value.vacationTypeId = event;
+  VacationBaseType.value = VacationType.value.find(
+    (x) => x.id == event
+  ).leaveBased;
+  console.log(newEmployeeLeave.value.vacationTypeId);
 };
 
-const downloadAttachment = (url) =>{
+const downloadAttachment = (url) => {
   window.open(url, "_blank");
-}
+};
 
 const changeEmployeeLeavestatus = async () => {
   errorMessage.value = "";
@@ -142,7 +144,7 @@ const changeEmployeeLeavestatus = async () => {
   loading.value = true;
   try {
     const response = await fetch(
-      `${config.public.apiUrl}/Leave/EditStatus?id=${LeaveInfo.value.id}&status=${LeaveInfo.value.employeeLeavestatus}`,
+      `${config.public.apiUrl}/Leave/UpdateStatus?id=${LeaveInfo.value.id}&status=${LeaveInfo.value.employeeLeavestatus}&managerDescription=${LeaveInfo.value.managerDescription}`,
       {
         method: "PUT",
         headers: {
@@ -165,17 +167,94 @@ const changeEmployeeLeavestatus = async () => {
   }
 };
 
-
-
-const handleImageError = (event, fallbackImage) => {
-  event.target.src = `data:image/jpeg;base64,${fallbackImage}`;
-};
-
 const LeaveDescription = ref("");
 
+const formatDate = (date) => {
+  return date.toString().split("T")[0];
+};
 
+const formatTime = (time) => {
+  const [hours, minutes] = time.split(":");
+  const period = hours >= 12 ? "PM" : "AM";
+  const adjustedHours = hours % 12 || 12; // Convert 0 to 12 for 12-hour format
+  return `${adjustedHours}:${minutes} ${period}`;
+};
 
+const employeeLeavestatus = [
+  { text: "Pending", value: 1 },
+  { text: "Approved", value: 2 },
+  { text: "Rejected", value: 3 },
+  { text: "Approved With Changes", value: 4 },
+  { text: "Approved With Deduction", value: 5 },
+];
 
+const complaintStatus = [
+  {
+    text: "Pending",
+    value: 0,
+    backgroundColor: "#E3FCEF",
+    borderColor: "#B3EBC9",
+    textColor: "#007B55",
+  },
+  {
+    text: "Approved",
+    value: 1,
+    backgroundColor: "#F2F2F7",
+    borderColor: "#D1D1E0",
+    textColor: "#505464",
+  },
+  {
+    text: "Rejected",
+    value: 3,
+    backgroundColor: "#FFE6E6",
+    borderColor: "#FFB3B3",
+    textColor: "#B00020",
+  },
+  {
+    text: "Approved With Changes",
+    value: 4,
+    backgroundColor: "#FFF8E1",
+    borderColor: "#FFECB3",
+    textColor: "#FF8F00",
+  },
+  {
+    text: "Approved With Deduction",
+    value: 5,
+    backgroundColor: "#FFEBEE",
+    borderColor: "#FFB3D1",
+    textColor: "#FF2D55",
+  },
+];
+
+const getStatusStyle = (status) => {
+  const statusObj = complaintStatus.find((s) => s.value === status);
+  return statusObj
+    ? {
+        backgroundColor: statusObj.backgroundColor,
+        borderColor: statusObj.borderColor,
+        color: statusObj.textColor,
+        padding: "8px",
+        borderRadius: "5px",
+      }
+    : {};
+};
+
+const getStatusText = (status) => {
+  switch (status) {
+    case 0:
+      return "Pending";
+    case 1:
+      return "Approved";
+    case 2:
+      return "Rejected";
+    case 3:
+      return "Approved With Changes";
+    case 4:
+      return "Approved With Deduction";
+    default:
+      return "";
+  }
+};
 
 const showDesDialog = ref(false);
 
@@ -185,14 +264,38 @@ const showDes = (description) => {
 };
 
 const getFile = (event) => {
-  newEmployeeLeave.value.AttachmentFile = event.target.files[0];
+  newEmployeeLeave.value.attachmentFile = event.target.files[0];
 };
 
 const submitEmployeeLeave = async () => {
   errorMessage.value = "";
   successMessage.value = "";
+  if (!newEmployeeLeave.value.vacationTypeId) {
+    errorMessage.value = "Please select a Vacation Type";
+    return;
+  }
 
-  if (!newEmployeeLeave.value.Description) {
+  if (newEmployeeLeave.value.endDate && newEmployeeLeave.value.startDate) {
+    if (
+      new Date(newEmployeeLeave.value.endDate) <
+      new Date(newEmployeeLeave.value.startDate)
+    ) {
+      errorMessage.value = "End Date cannot be less than Start Date";
+      return;
+    }
+  }
+
+  if (newEmployeeLeave.value.endTime && newEmployeeLeave.value.startTime) {
+    if (
+      new Date(newEmployeeLeave.value.endTime) <
+      new Date(newEmployeeLeave.value.startTime)
+    ) {
+      errorMessage.value = "End Time cannot be less than Start Time";
+      return;
+    }
+  }
+
+  if (!newEmployeeLeave.value.description) {
     errorMessage.value = "Please fill out description fields";
     return;
   }
@@ -200,15 +303,15 @@ const submitEmployeeLeave = async () => {
   loading.value = true;
   try {
     const formData = new FormData();
-    formData.append("VacationTypeId", newEmployeeLeave.value.VacationTypeId);
-    formData.append("StartDate", newEmployeeLeave.value.StartDate);
-    formData.append("EndDate", newEmployeeLeave.value.EndDate);
-    formData.append("StartTime", newEmployeeLeave.value.StartTime);
-    formData.append("EndTime", newEmployeeLeave.value.EndTime);
-    formData.append("Description", newEmployeeLeave.value.Description);
+    formData.append("VacationTypeId", newEmployeeLeave.value.vacationTypeId);
+    formData.append("StartDate", newEmployeeLeave.value.startDate);
+    formData.append("EndDate", newEmployeeLeave.value.endDate);
+    formData.append("StartTime", newEmployeeLeave.value.startTime);
+    formData.append("EndTime", newEmployeeLeave.value.endTime);
+    formData.append("Description", newEmployeeLeave.value.description);
 
-      if (newEmployeeLeave.value.AttachmentFile) {
-      formData.append("AttachmentFile", newEmployeeLeave.value.AttachmentFile);
+    if (newEmployeeLeave.value.attachmentFile) {
+      formData.append("AttachmentFile", newEmployeeLeave.value.attachmentFile);
     }
 
     const url = isEditing.value
@@ -271,17 +374,15 @@ const deleteLeave = async () => {
   }
 };
 
-
-
 const resetForm = () => {
   newEmployeeLeave.value = {
-    VacationTypeId: null,
-    StartDate: "",
-    EndDate: "",
-    StartTime: "",
-    EndTime: "",
-    Description: null,
-    AttachmentFile : null,
+    vacationTypeId: null,
+    startDate: "",
+    endDate: "",
+    startTime: "",
+    endTime: "",
+    description: null,
+    attachmentFile: null,
   };
   isEditing.value = false;
   editingLeaveId.value = null;
@@ -291,7 +392,6 @@ onMounted(() => {
   fetchEmployeeLeaves();
   fetchVacationType();
 });
-
 </script>
 
 <template>
@@ -314,58 +414,77 @@ onMounted(() => {
                   item-title="name"
                   item-value="id"
                   label="Vacation Type"
+                  v-model="newEmployeeLeave.vacationTypeId"
                   required
                   @update:model-value="changeVacationType($event)"
                 ></v-select>
               </v-col>
 
-              <v-col cols="12" sm="6" md="3" v-if="VacationBaseType == 0 && VacationBaseType != null">
+              <v-col
+                cols="12"
+                sm="6"
+                md="3"
+                v-if="VacationBaseType == 0 && VacationBaseType != null"
+              >
                 <v-text-field
-                  v-model="newEmployeeLeave.StartDate"
+                  v-model="newEmployeeLeave.startDate"
                   label="Start Date"
                   type="date"
                   required
                 ></v-text-field>
               </v-col>
 
-              <v-col cols="12" sm="6" md="3" v-if="VacationBaseType == 0 && VacationBaseType != null">
+              <v-col
+                cols="12"
+                sm="6"
+                md="3"
+                v-if="VacationBaseType == 0 && VacationBaseType != null"
+              >
                 <v-text-field
-                  v-model="newEmployeeLeave.EndDate"
+                  v-model="newEmployeeLeave.endDate"
                   label="End Date"
                   type="date"
                   required
                 ></v-text-field>
               </v-col>
 
-              <v-col cols="12" sm="6" md="3" v-if="VacationBaseType == 1 && VacationBaseType != null" >
+              <v-col
+                cols="12"
+                sm="6"
+                md="3"
+                v-if="VacationBaseType == 1 && VacationBaseType != null"
+              >
                 <v-text-field
-                  v-model="newEmployeeLeave.StartTime"
+                  v-model="newEmployeeLeave.startTime"
                   label="Start Time"
                   type="time"
                   required
                 ></v-text-field>
               </v-col>
 
-              <v-col cols="12" sm="6" md="3" v-if="VacationBaseType == 1 && VacationBaseType != null">
+              <v-col
+                cols="12"
+                sm="6"
+                md="3"
+                v-if="VacationBaseType == 1 && VacationBaseType != null"
+              >
                 <v-text-field
-                  v-model="newEmployeeLeave.EndTime"
+                  v-model="newEmployeeLeave.endTime"
                   label="End Time"
                   type="time"
                   required
                 ></v-text-field>
-
               </v-col>
-
 
               <v-col cols="12" sm="6" md="3">
                 <v-text-field
-                  v-model="newEmployeeLeave.Description"
+                  v-model="newEmployeeLeave.description"
                   label="Description"
                   required
                 ></v-text-field>
               </v-col>
 
-              <v-col cols="12" sm="6" md="3">
+              <v-col cols="12 mb-5" sm="6" md="3">
                 <v-file-input
                   label="Attach File"
                   accept="image/*"
@@ -396,20 +515,7 @@ onMounted(() => {
                 @input="fetchEmployeeLeaves"
               ></v-text-field>
             </v-col>
-            <!-- IsOutSideLeave filter -->
-            <v-col cols="12" sm="6" md="4" v-if="userStore.user.role == 1 || userStore.user.role == 4 || userStore.user.role == 5">
-              <v-select
-                v-model="searchByInfo.isOutSideLeave"
-                :items="[
-                  { text: 'All', value: ''},
-                  { text: 'Yes', value: true },
-                   { text: 'No', value: false }]"
-                item-title="text"
-                item-value="value"
-                label="Filter by OutSide Leave"
-              ></v-select>
-            </v-col>
-            <!-- employeeLeavestatus filter -->
+
             <v-col cols="12" sm="6" md="4">
               <v-select
                 v-model="searchByInfo.employeeLeavestatus"
@@ -422,88 +528,142 @@ onMounted(() => {
           </v-row>
 
           <v-table density="compact">
-  <thead>
-    <tr>
-      <th class="text-left">Full Name</th>
-      <th class="text-left">Title</th>
-      <th class="text-left">Description</th>
-      <th class="text-left">Against Employee</th>
-      <th class="text-left">Status</th>
-      <th class="text-left">Attachment</th>
-      <th class="text-left" v-if="userStore.user.role == 1 || userStore.user.role == 3 || userStore.user.role == 4 || userStore.user.role == 5">Is OutSite</th>
-      <th class="text-left" v-if="userStore.user.role == 1 || userStore.user.role == 4 || userStore.user.role == 5">Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr v-for="Leave in employeeLeaves" :key="Leave.id" class="hover:bg-gray-100">
-      <td>
-        <div v-if="Leave.isOutSideLeave == true" >
-         {{ Leave.fullName }}
-        </div>
-        <div v-if="Leave.employee != null && Leave.isOutSideLeave == false" class="employee-table-info">
-          <v-avatar size="40" class="mr-4" v-if="Leave.employee.image512 != 'Anonymous'">
-            <img :src="Leave.employee.image512 ? `data:image/svg+xml;base64,${Leave.employee.image512}` : 'fallback-image-url.jpg'" @error="handleImageError($event, Leave.employee.image512)" width="40" height="40" alt="user" class="avatar"/>
-          </v-avatar>
-          <v-avatar size="40" class="mr-4" v-else>
-            <img src="../../../assets/images/anonymous.png" width="40" height="40" alt="user" class="avatar"/>
-          </v-avatar>
-          <div>
-            {{ Leave.employee.name }}
-            <v-icon v-if="Leave.isManager" class="mr-2 managerIcon" color="primary">mdi-star</v-icon>
-            <v-icon v-else class="mr-2 managerIcon" color="primary">mdi-account</v-icon>
-            <br />
-            <span class="jot-title">{{ Leave.employee.jobTitle }}</span>
-          </div>
-        </div>
-        <div v-if="Leave.employee != null && Leave.isOutSideLeave == true">-</div>
-        <div v-else></div>
-      </td>
-      <td>{{ Leave.title }}</td>
-      <td>
-        <span class="btn" @click="showDes(Leave.description)">Show Description</span>
-      </td>
-      <td>
-        <div v-if="Leave.againstEmployee" class="employee-table-info">
-          <v-avatar size="40" class="mr-4" v-if="Leave.againstEmployee.image512 != 'Anonymous'">
-            <img :src="Leave.againstEmployee.image512 ? `data:image/svg+xml;base64,${Leave.againstEmployee.image512}` : 'fallback-image-url.jpg'" @error="handleImageError($event, Leave.againstEmployee.image512)" width="40" height="40" alt="user" class="avatar"/>
-          </v-avatar>
-          <v-avatar size="40" class="mr-4" v-else>
-            <img src="../../../assets/images/anonymous.png" width="40" height="40" alt="user" class="avatar"/>
-          </v-avatar>
-          <div>
-            {{ Leave.againstEmployee.name }}
-            <v-icon v-if="Leave.isManager" class="mr-2 managerIcon" color="primary">mdi-star</v-icon>
-            <v-icon v-else class="mr-2 managerIcon" color="primary">mdi-account</v-icon>
-            <br />
-            <span class="jot-title">{{ Leave.againstEmployee.jobTitle }}</span>
-          </div>
-        </div>
-        <span v-else>-</span>
-      </td>
-  
-      <td>
-        <span v-if="userStore.user.role == 1 || userStore.user.role == 3 || userStore.user.role == 4 || userStore.user.role == 5" @click="openDialogStatus(Leave)" class="btn" :style="getStatusStyle(Leave.employeeLeavestatus)">
-          {{ getStatusText(Leave.employeeLeavestatus) }}
-        </span>
-        <span v-else class="btn" :style="getStatusStyle(Leave.employeeLeavestatus)">
-          {{ getStatusText(Leave.employeeLeavestatus) }}
-        </span>
-      </td>
-      
-      <td>
-        <v-icon v-if="Leave.attachment" color="primary" @click="downloadAttachment(Leave.fileFullUrl)">mdi-paperclip</v-icon>
-        <v-icon v-else color="grey">mdi-paperclip</v-icon>
-      </td>
-      <td v-if="userStore.user.role == 1 || userStore.user.role == 4 || userStore.user.role == 5">
-        <span v-if="Leave.isOutSideLeave">Yes</span>
-        <span v-else>No</span>
-      </td>
-      <td v-if="userStore.user.role == 1 || userStore.user.role == 3 || userStore.user.role == 4 || userStore.user.role == 5">
-        <v-btn icon="mdi-delete" @click="confirmDeleteLeave(Leave)" color="red" class="ma-2"></v-btn>
-      </td>
-    </tr>
-  </tbody>
-</v-table>
+            <thead>
+              <tr>
+                <th class="text-left">Employee Name</th>
+                <th class="text-left">Leave Type</th>
+                <th class="text-left">Description</th>
+                <th class="text-left">Leave Based</th>
+                <th class="text-left">From - To</th>
+                <th class="text-left">Status</th>
+                <th class="text-left">Attachment</th>
+                <!-- manager Description -->
+                <th class="text-left">Manager Description</th>
+                <th class="text-left">created At</th>
+                <th class="text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="Leave in employeeLeaves"
+                :key="Leave.id"
+                class="hover:bg-gray-100"
+              >
+                <td>
+                  <div>
+                    {{ Leave.employee.name }}
+                  </div>
+                </td>
+                <td>{{ Leave.vacationType.name }}</td>
+
+                <td>
+                  <v-icon @click="showDes(Leave.description)" color="primary"
+                    >mdi-eye</v-icon
+                  >
+                </td>
+                <td>
+                  <span v-if="Leave.vacationType.leaveBased == 0"
+                    >Day Leave Based</span
+                  >
+                  <span v-else>Hour Leave Based</span>
+                </td>
+
+                <td>
+                  <span v-if="Leave.vacationType.leaveBased == 0">
+                    {{ formatDate(Leave.startDate) }} -
+                    {{ formatDate(Leave.endDate) }}
+                  </span>
+                  <span v-else>
+                    {{ formatTime(Leave.startTime) }} -
+                    {{ formatTime(Leave.endTime) }}
+                  </span>
+                </td>
+
+                <td>
+                  <span
+                    v-if="
+                      userStore.user.role == 1 ||
+                      userStore.user.role == 3 ||
+                      userStore.user.role == 4 ||
+                      userStore.user.role == 5
+                    "
+                    @click="openDialogStatus(Leave)"
+                    class="btn"
+                    :style="getStatusStyle(Leave.status)"
+                  >
+                    {{ getStatusText(Leave.status) }}
+                  </span>
+                  <span
+                    v-else
+                    class="btn"
+                    :style="getStatusStyle(Leave.status)"
+                  >
+                    {{ getStatusText(Leave.status) }}
+                  </span>
+                </td>
+
+                <td>
+                  <v-icon
+                    v-if="Leave.attachment"
+                    color="primary"
+                    @click="downloadAttachment(Leave.fileFullUrl)"
+                    >mdi-paperclip</v-icon
+                  >
+                  <v-icon v-else color="grey">mdi-paperclip</v-icon>
+                </td>
+
+                <td>
+                  <v-icon v-if="Leave.managerDescription" @click="showDes(Leave.managerDescription)" color="primary"
+                    >mdi-eye</v-icon
+                  >
+                  <span v-else>Not Available</span>
+                </td>
+
+                <td>{{ formatDate(Leave.createdAt) }}</td>
+
+                <td
+                  v-if="
+                    userStore.user.role == 1 ||
+                    userStore.user.role == 3 ||
+                    userStore.user.role == 4 ||
+                    userStore.user.role == 5
+                  "
+                >
+                  <v-btn
+                    icon="mdi-delete"
+                    @click="confirmDeleteLeave(Leave)"
+                    color="red"
+                    class="ma-2"
+                  ></v-btn>
+                </td>
+                <!-- edit -->
+                <td
+                  v-if="
+                    userStore.user.role == 1 ||
+                    userStore.user.role == 3 ||
+                    userStore.user.role == 4 ||
+                    userStore.user.role == 5
+                  "
+                >
+                  <v-btn
+                    icon="mdi-pencil"
+                    @click="
+                      isEditing = true;
+                      editingLeaveId = Leave.id;
+                      newEmployeeLeave = Leave;
+                      newEmployeeLeave.vacationTypeId = Leave.vacationTypeId;
+                      newEmployeeLeave.startDate = Leave.startDate != null ? formatDate(Leave.startDate) : '';
+                      newEmployeeLeave.endDate = Leave.endDate != null ? formatDate(Leave.endDate) : '';
+                      newEmployeeLeave.attachmentFile = null;
+                      VacationBaseType = Leave.vacationType.leaveBased;
+                    "
+                    color="primary"
+                    class="ma-2"
+                  ></v-btn>
+                </td>
+              </tr>
+            </tbody>
+          </v-table>
 
           <v-pagination
             v-model="currentPage"
@@ -528,10 +688,23 @@ onMounted(() => {
           item-value="value"
           label="Status"
         ></v-select>
+
+        <!-- manager description -->
+        <v-text-field
+          v-model="LeaveInfo.managerDescription"
+          label="Manager Description"
+          required
+        ></v-text-field>
       </v-card-text>
       <v-card-actions>
         <v-btn color="primary" text @click="dialogStatus = false">Close</v-btn>
-        <v-btn color="red" :loading="loading" text @click="changeEmployeeLeavestatus">Change</v-btn>
+        <v-btn
+          color="red"
+          :loading="loading"
+          text
+          @click="changeEmployeeLeavestatus"
+          >Change</v-btn
+        >
       </v-card-actions>
     </v-card>
   </v-dialog>
