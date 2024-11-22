@@ -60,11 +60,11 @@ watch(searchByInfo, () => {
 
 const newEmployeeLeave = ref({
     VacationTypeId: null,
-    StartDate: null,
-    EndDate: null,
-    StartTime: null,
-    EndTime: null,
-    Description: null,
+    StartDate: "",
+    EndDate: "",
+    StartTime: "",
+    EndTime: "",
+    Description: "",
     AttachmentFile : null,
 });
 const isEditing = ref(false);
@@ -78,7 +78,7 @@ const fetchEmployeeLeaves = async () => {
   loading.value = true;
   try {
     const response = await fetch(
-      `${config.public.apiUrl}/Leave?Page=${currentPage.value}&PageSize=${pageSize.value}&Title=${searchTerm.value}&employeeLeavestatus=${searchByInfo.value.employeeLeavestatus == null ? "" : searchByInfo.value.employeeLeavestatus}&IsOutSideLeave=${searchByInfo.value.isOutSideLeave}`,
+      `${config.public.apiUrl}/EmployeeLeave?Page=${currentPage.value}&PageSize=${pageSize.value}`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -128,7 +128,8 @@ const VacationBaseType = ref(null);
 const changeVacationType = (event) => {
   console.log(event);
   newEmployeeLeave.value.VacationTypeId = event;
- VacationBaseType.value = VacationType.value.find((x) => x.id == event).leaveBased;
+  VacationBaseType.value = VacationType.value.find((x) => x.id == event).leaveBased;
+  console.log(newEmployeeLeave.value.VacationTypeId);
 };
 
 const downloadAttachment = (url) =>{
@@ -191,36 +192,28 @@ const submitEmployeeLeave = async () => {
   errorMessage.value = "";
   successMessage.value = "";
 
-  if (!newEmployeeLeave.value.title || !newEmployeeLeave.value.description) {
-    errorMessage.value = "Please fill out both title and description fields";
-    return;
-  }
-
-  if (!newEmployeeLeave.value.LeaveFor) {
-    errorMessage.value = "Please select a Leave target";
+  if (!newEmployeeLeave.value.Description) {
+    errorMessage.value = "Please fill out description fields";
     return;
   }
 
   loading.value = true;
   try {
     const formData = new FormData();
-    formData.append("Title", newEmployeeLeave.value.title);
-    formData.append("Description", newEmployeeLeave.value.description);
-    formData.append("LeaveFor", newEmployeeLeave.value.LeaveFor);
-    if (newEmployeeLeave.value.againstEmployeeId) {
-      formData.append(
-        "AgainstEmployeeId",
-        newEmployeeLeave.value.againstEmployeeId
-      );
-    }
-    formData.append("IsHiddenName", newEmployeeLeave.value.isHiddenName);
-    if (newEmployeeLeave.value.attachmentFile) {
-      formData.append("AttachmentFile", newEmployeeLeave.value.attachmentFile);
+    formData.append("VacationTypeId", newEmployeeLeave.value.VacationTypeId);
+    formData.append("StartDate", newEmployeeLeave.value.StartDate);
+    formData.append("EndDate", newEmployeeLeave.value.EndDate);
+    formData.append("StartTime", newEmployeeLeave.value.StartTime);
+    formData.append("EndTime", newEmployeeLeave.value.EndTime);
+    formData.append("Description", newEmployeeLeave.value.Description);
+
+      if (newEmployeeLeave.value.AttachmentFile) {
+      formData.append("AttachmentFile", newEmployeeLeave.value.AttachmentFile);
     }
 
     const url = isEditing.value
-      ? `${config.public.apiUrl}/Leave/UpdateLeave?id=${editingLeaveId.value}`
-      : `${config.public.apiUrl}/Leave`;
+      ? `${config.public.apiUrl}/EmployeeLeave?id=${editingLeaveId.value}`
+      : `${config.public.apiUrl}/EmployeeLeave`;
     const method = isEditing.value ? "PUT" : "POST";
 
     const response = await fetch(url, {
@@ -283,10 +276,10 @@ const deleteLeave = async () => {
 const resetForm = () => {
   newEmployeeLeave.value = {
     VacationTypeId: null,
-    StartDate: null,
-    EndDate: null,
-    StartTime: null,
-    EndTime: null,
+    StartDate: "",
+    EndDate: "",
+    StartTime: "",
+    EndTime: "",
     Description: null,
     AttachmentFile : null,
   };
