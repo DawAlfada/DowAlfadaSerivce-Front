@@ -31,8 +31,15 @@ watch([errorMessage, successMessage], () => {
   }
 });
 
+
+const statusChangeInfo = ref({
+  employeeLeavestatus: "",
+  managerDescription: "",
+  id: null,
+});
+
 const LeaveInfo = ref({
-  employeeLeavestatus: 1,
+  employeeLeavestatus: "",
   managerDescription: "",
 
   id: null,
@@ -40,8 +47,8 @@ const LeaveInfo = ref({
 
 const openDialogStatus = (info) => {
   dialogStatus.value = true;
-  LeaveInfo.value.employeeLeavestatus = info.status;
-  LeaveInfo.value.id = info.id;
+  statusChangeInfo.value.employeeLeavestatus = info.status;
+  statusChangeInfo.value.id = info.id;
 };
 const searchTerm = ref("");
 
@@ -104,7 +111,7 @@ const fetchVacationType = async () => {
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${userStore.token}`, // Use the token from the store
+          Authorization: `Bearer ${userStore.token}`,
         },
       }
     );
@@ -119,9 +126,6 @@ const fetchVacationType = async () => {
     loading.value = false;
   }
 };
-
-// watch vacationTypeId in newEmployeeLeave to change vacationTypes selected  
-
 
 const VacationBaseType = ref(null);
 
@@ -139,12 +143,28 @@ const downloadAttachment = (url) => {
 };
 
 const changeEmployeeLeavestatus = async () => {
+
+  if (
+    statusChangeInfo.value.employeeLeavestatus === "" ||
+    statusChangeInfo.value.employeeLeavestatus === LeaveInfo.value.employeeLeavestatus
+  ) {
+    errorMessage.value = "Please select a different status";
+    return;
+  }
+
+  if (!statusChangeInfo.value.managerDescription) {
+    errorMessage.value = "Please provide a manager description";
+    return;
+  }
+
+
+
   errorMessage.value = "";
   successMessage.value = "";
   loading.value = true;
   try {
     const response = await fetch(
-      `${config.public.apiUrl}/Leave/UpdateStatus?id=${LeaveInfo.value.id}&status=${LeaveInfo.value.employeeLeavestatus}&managerDescription=${LeaveInfo.value.managerDescription}`,
+      `${config.public.apiUrl}/EmployeeLeave/UpdateStatus?id=${statusChangeInfo.value.id}&status=${statusChangeInfo.value.employeeLeavestatus}&managerDescription=${statusChangeInfo.value.managerDescription}`,
       {
         method: "PUT",
         headers: {
@@ -181,11 +201,11 @@ const formatTime = (time) => {
 };
 
 const employeeLeavestatus = [
-  { text: "Pending", value: 1 },
-  { text: "Approved", value: 2 },
-  { text: "Rejected", value: 3 },
-  { text: "Approved With Changes", value: 4 },
-  { text: "Approved With Deduction", value: 5 },
+  { text: "Pending", value: 0 },
+  { text: "Approved", value: 1 },
+  { text: "Rejected", value: 2 },
+  { text: "Approved With Changes", value: 3 },
+  { text: "Approved With Deduction", value: 4 },
 ];
 
 const complaintStatus = [
@@ -268,6 +288,12 @@ const getFile = (event) => {
 };
 
 const submitEmployeeLeave = async () => {
+
+  for (const key in newEmployeeLeave.value) {
+    if (newEmployeeLeave.value[key] === null) {
+      newEmployeeLeave.value[key] = "";
+    }
+  }
   errorMessage.value = "";
   successMessage.value = "";
   if (!newEmployeeLeave.value.vacationTypeId) {
@@ -315,7 +341,7 @@ const submitEmployeeLeave = async () => {
     }
 
     const url = isEditing.value
-      ? `${config.public.apiUrl}/EmployeeLeave?id=${editingLeaveId.value}`
+      ? `${config.public.apiUrl}/EmployeeLeave/${editingLeaveId.value}`
       : `${config.public.apiUrl}/EmployeeLeave`;
     const method = isEditing.value ? "PUT" : "POST";
 
@@ -537,7 +563,6 @@ onMounted(() => {
                 <th class="text-left">From - To</th>
                 <th class="text-left">Status</th>
                 <th class="text-left">Attachment</th>
-                <!-- manager Description -->
                 <th class="text-left">Manager Description</th>
                 <th class="text-left">created At</th>
                 <th class="text-left">Actions</th>
@@ -620,7 +645,6 @@ onMounted(() => {
                 </td>
 
                 <td>{{ formatDate(Leave.createdAt) }}</td>
-
                 <td
                   v-if="
                     userStore.user.role == 1 ||
@@ -630,22 +654,7 @@ onMounted(() => {
                   "
                 >
                   <v-btn
-                    icon="mdi-delete"
-                    @click="confirmDeleteLeave(Leave)"
-                    color="red"
-                    class="ma-2"
-                  ></v-btn>
-                </td>
-                <!-- edit -->
-                <td
-                  v-if="
-                    userStore.user.role == 1 ||
-                    userStore.user.role == 3 ||
-                    userStore.user.role == 4 ||
-                    userStore.user.role == 5
-                  "
-                >
-                  <v-btn
+                     v-if="Leave.status == 0 || Leave.status == 4 "
                     icon="mdi-pencil"
                     @click="
                       isEditing = true;
@@ -660,6 +669,21 @@ onMounted(() => {
                     color="primary"
                     class="ma-2"
                   ></v-btn>
+
+                  <v-btn 
+                  v-if="
+                    userStore.user.role == 1 ||
+                    userStore.user.role == 3 ||
+                    userStore.user.role == 4 ||
+                    userStore.user.role == 5 &&
+                    Leave.status == 0 || Leave.status == 4 
+                  "
+                    icon="mdi-delete"
+                    @click="confirmDeleteLeave(Leave)"
+                    color="red"
+                    class="ma-2"
+                  ></v-btn>
+
                 </td>
               </tr>
             </tbody>
@@ -682,16 +706,14 @@ onMounted(() => {
       <v-card-title class="headline">Change Leave Status</v-card-title>
       <v-card-text>
         <v-select
-          v-model="LeaveInfo.employeeLeavestatus"
+          v-model="statusChangeInfo.employeeLeavestatus"
           :items="employeeLeavestatus"
           item-title="text"
           item-value="value"
           label="Status"
         ></v-select>
-
-        <!-- manager description -->
         <v-text-field
-          v-model="LeaveInfo.managerDescription"
+          v-model="statusChangeInfo.managerDescription"
           label="Manager Description"
           required
         ></v-text-field>
