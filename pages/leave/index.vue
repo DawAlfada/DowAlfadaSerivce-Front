@@ -31,7 +31,6 @@ watch([errorMessage, successMessage], () => {
   }
 });
 
-
 const statusChangeInfo = ref({
   employeeLeavestatus: "",
   managerDescription: "",
@@ -128,6 +127,7 @@ const fetchVacationType = async () => {
 };
 
 const VacationBaseType = ref(null);
+const vacationFullInfo = ref(null);
 
 const changeVacationType = (event) => {
   console.log(event);
@@ -135,7 +135,8 @@ const changeVacationType = (event) => {
   VacationBaseType.value = VacationType.value.find(
     (x) => x.id == event
   ).leaveBased;
-  console.log(newEmployeeLeave.value.vacationTypeId);
+
+  vacationFullInfo.value = VacationType.value.find((x) => x.id == event);
 };
 
 const downloadAttachment = (url) => {
@@ -143,10 +144,10 @@ const downloadAttachment = (url) => {
 };
 
 const changeEmployeeLeavestatus = async () => {
-
   if (
     statusChangeInfo.value.employeeLeavestatus === "" ||
-    statusChangeInfo.value.employeeLeavestatus === LeaveInfo.value.employeeLeavestatus
+    statusChangeInfo.value.employeeLeavestatus ===
+      LeaveInfo.value.employeeLeavestatus
   ) {
     errorMessage.value = "Please select a different status";
     return;
@@ -156,8 +157,6 @@ const changeEmployeeLeavestatus = async () => {
     errorMessage.value = "Please provide a manager description";
     return;
   }
-
-
 
   errorMessage.value = "";
   successMessage.value = "";
@@ -288,7 +287,6 @@ const getFile = (event) => {
 };
 
 const submitEmployeeLeave = async () => {
-
   for (const key in newEmployeeLeave.value) {
     if (newEmployeeLeave.value[key] === null) {
       newEmployeeLeave.value[key] = "";
@@ -378,7 +376,7 @@ const deleteLeave = async () => {
   deleteDialog.value = false;
   try {
     const response = await fetch(
-      `${config.public.apiUrl}/Leave/${LeaveToDelete.value.id}`,
+      `${config.public.apiUrl}/EmployeeLeave/${LeaveToDelete.value.id}`,
       {
         method: "DELETE",
         headers: {
@@ -431,6 +429,16 @@ onMounted(() => {
           successMessage
         }}</v-alert>
 
+        <v-row>
+          <v-col cols="12" sm="6" md="3" v-if="vacationFullInfo != null && vacationFullInfo.leaveBased == 0">
+          {{ vacationFullInfo != null ? vacationFullInfo.leaveDaysInYear : '' }}
+          </v-col>
+
+          <v-col cols="12" sm="6" md="3" v-if="vacationFullInfo != null && vacationFullInfo.leaveBased == 1">
+          {{ vacationFullInfo != null ? vacationFullInfo.hoursPerMonth : '' }}
+          </v-col>
+        </v-row>
+
         <v-form @submit.prevent="submitEmployeeLeave">
           <v-container class="mb-6">
             <v-row>
@@ -445,7 +453,6 @@ onMounted(() => {
                   @update:model-value="changeVacationType($event)"
                 ></v-select>
               </v-col>
-
               <v-col
                 cols="12"
                 sm="6"
@@ -638,7 +645,10 @@ onMounted(() => {
                 </td>
 
                 <td>
-                  <v-icon v-if="Leave.managerDescription" @click="showDes(Leave.managerDescription)" color="primary"
+                  <v-icon
+                    v-if="Leave.managerDescription"
+                    @click="showDes(Leave.managerDescription)"
+                    color="primary"
                     >mdi-eye</v-icon
                   >
                   <span v-else>Not Available</span>
@@ -654,15 +664,19 @@ onMounted(() => {
                   "
                 >
                   <v-btn
-                     v-if="Leave.status == 0 || Leave.status == 4 "
+                    v-if="Leave.status == 0 || Leave.status == 4"
                     icon="mdi-pencil"
                     @click="
                       isEditing = true;
                       editingLeaveId = Leave.id;
                       newEmployeeLeave = Leave;
                       newEmployeeLeave.vacationTypeId = Leave.vacationTypeId;
-                      newEmployeeLeave.startDate = Leave.startDate != null ? formatDate(Leave.startDate) : '';
-                      newEmployeeLeave.endDate = Leave.endDate != null ? formatDate(Leave.endDate) : '';
+                      newEmployeeLeave.startDate =
+                        Leave.startDate != null
+                          ? formatDate(Leave.startDate)
+                          : '';
+                      newEmployeeLeave.endDate =
+                        Leave.endDate != null ? formatDate(Leave.endDate) : '';
                       newEmployeeLeave.attachmentFile = null;
                       VacationBaseType = Leave.vacationType.leaveBased;
                     "
@@ -670,20 +684,19 @@ onMounted(() => {
                     class="ma-2"
                   ></v-btn>
 
-                  <v-btn 
-                  v-if="
-                    userStore.user.role == 1 ||
-                    userStore.user.role == 3 ||
-                    userStore.user.role == 4 ||
-                    userStore.user.role == 5 &&
-                    Leave.status == 0 || Leave.status == 4 
-                  "
+                  <v-btn
+                    v-if="
+                      userStore.user.role == 1 ||
+                      userStore.user.role == 3 ||
+                      userStore.user.role == 4 ||
+                      (userStore.user.role == 5 && Leave.status == 0) ||
+                      Leave.status == 4
+                    "
                     icon="mdi-delete"
                     @click="confirmDeleteLeave(Leave)"
                     color="red"
                     class="ma-2"
                   ></v-btn>
-
                 </td>
               </tr>
             </tbody>

@@ -12,15 +12,6 @@ definePageMeta({
   title: "Evaluation VacationType",
 });
 
-
-watch([errorMessage, successMessage], () => {
-  if (errorMessage.value || successMessage.value) {
-    setTimeout(() => {
-      errorMessage.value = null;
-      successMessage.value = null;
-    }, 4000);
-  }
-});
 const VacationType = ref([]);
 const totalCount = ref(0);
 const loading = ref(false);
@@ -34,6 +25,15 @@ const showWorkTypes = (workTypes) => {
   workTypeDialog.value = true;
   worktype.value = workTypes;
 };
+
+watch([errorMessage, successMessage], () => {
+  if (errorMessage.value || successMessage.value) {
+    setTimeout(() => {
+      errorMessage.value = null;
+      successMessage.value = null;
+    }, 4000);
+  }
+});
 
 const model = ref(new Date().toISOString().substr(0, 10));
 
@@ -50,6 +50,14 @@ const newVacationType = ref({
   name: "",
   workDaysInWeek: "",
   leaveDaysInYear: "",
+  leaveBased: 0,
+  isWithoutSalary: false,
+  isDependVacationBalance: false,
+  workTypeIds: [],
+  leaveDaysInYear: null,
+  hoursPerMonth: null,
+  isActive: true,
+  
 });
 const isEditing = ref(false);
 const editingVacationTypeId = ref(null);
@@ -277,6 +285,20 @@ onMounted(() => {
                 ></v-select>
               </v-col>
 
+              <!-- IsDependVacationBalance -->
+              <v-col cols="12" sm="6" md="3">
+                <v-select
+                  v-model="newVacationType.isDependVacationBalance"
+                  :items="[
+                    { text: 'Depend Vacation Balance', value: true },
+                    { text: 'Not Depend Vacation Balance', value: false },
+                  ]"
+                  label="Is Depend Vacation Balance"
+                  item-title="text"
+                  item-value="value"
+                  required
+                ></v-select>
+              </v-col>
               <v-col
                 cols="12"
                 sm="6"
@@ -358,11 +380,11 @@ onMounted(() => {
                 <td>
                   <span
                     v-if="
-                      item.workTypes &&
-                      item.workTypes.length > 0 &&
+                      item.vacationTypeWorkTypes &&
+                      item.vacationTypeWorkTypes.length > 0 &&
                       item.leaveBased === 0
                     "
-                    @click="showWorkTypes(item.workTypes)"
+                    @click="showWorkTypes(item.vacationTypeWorkTypes)"
                     class="clickable-text"
                   >
                     Depends on the type of work
@@ -421,7 +443,7 @@ onMounted(() => {
     </v-col>
   </v-row>
   <!--  worktype dialog -->
-  <v-dialog v-model="workTypeDialog" max-width="400">
+  <v-dialog v-model="workTypeDialog" max-width="600">
     <v-card>
       <v-card-title class="headline"> </v-card-title>
       <v-card-text>
@@ -434,7 +456,25 @@ onMounted(() => {
               @click="workTypeDialog = false"
             >
               <v-list-item-content>
-                <v-list-item-title>{{ item.name }}</v-list-item-title>
+                <v-list-item-title
+                  >{{ item.workType.name }} 
+                  <v-chip v-if="item.workType.workDaysInWeek"
+                    append-icon="mdi-checkbox-marked-circle"
+                    class="ma-2"
+                    color="primary"
+                  >
+                  -  Work days in week ( {{ item.workType.workDaysInWeek }} )
+                  </v-chip>
+               
+                  <v-chip v-if="item.workType.leaveDaysInYear"
+                    append-icon="mdi-checkbox-marked-circle"
+                    class="ma-2"
+                    color="primary"
+                  >
+                  - Leave days in year( {{ item.workType.leaveDaysInYear }} )
+                  </v-chip>
+                
+                </v-list-item-title>
               </v-list-item-content>
             </v-list-item>
           </v-list-item-group>
