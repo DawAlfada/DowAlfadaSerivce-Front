@@ -41,6 +41,12 @@ const sidebarItem: menu[] = [
         roles: [1, 2, 3, 4, 5, 6,7]
     },
     {
+        title: 'Leave Balance', 
+        icon: CirclePlusIcon,
+        to: '/leave/employeeBalance',
+        roles: [1, 2, 3, 4, 5, 6,7]
+    },
+    {
         title: 'Leave', 
         icon: CirclePlusIcon,
         to: '/leave',

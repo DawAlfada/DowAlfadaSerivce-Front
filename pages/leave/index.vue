@@ -17,6 +17,8 @@ const dialogStatus = ref(false);
 const currentPage = ref(1);
 const pageSize = ref(10);
 const totalPages = computed(() => Math.ceil(totalCount.value / pageSize.value));
+const leaveTypeInfo = ref(null);
+const leaveTypeIsError = ref(false);
 
 watch(currentPage, () => {
   fetchEmployeeLeaves();
@@ -136,6 +138,7 @@ const changeVacationType = (event) => {
     (x) => x.id == event
   ).leaveBased;
 
+  getLeaveTypeDeitelsById();
   vacationFullInfo.value = VacationType.value.find((x) => x.id == event);
 };
 
@@ -275,6 +278,35 @@ const getStatusText = (status) => {
   }
 };
 
+const getLeaveTypeDeitelsById = async () => {
+  leaveTypeIsError.value = false;
+  loading.value = true;
+  try {
+    const response = await fetch(
+      `${config.public.apiUrl}/VacationType/${newEmployeeLeave.value.vacationTypeId}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userStore.token}`,
+        },
+      }
+    );
+    const data = await response.json();
+    if (!data.error) {
+      leaveTypeIsError.value = false;
+      console.log(data.data);
+      leaveTypeInfo.value = data.data;
+    } else {
+      leaveTypeIsError.value = true;
+    }
+  } catch (error) {
+    errorMessage.value = "Failed to fetch data";
+    leaveTypeIsError.value = true;
+  } finally {
+    loading.value = false;
+  }
+};
+
 const showDesDialog = ref(false);
 
 const showDes = (description) => {
@@ -324,6 +356,27 @@ const submitEmployeeLeave = async () => {
     return;
   }
 
+  // check if total days or hours are available
+  if (leaveTypeInfo.value.leaveBased == 0) {
+    if (
+      leaveTypeInfo.value.totalDays - leaveTypeInfo.value.usedDays <
+      new Date(newEmployeeLeave.value.endDate) -
+        new Date(newEmployeeLeave.value.startDate)
+    ) {
+      errorMessage.value = "You don't have enough days for this leave";
+      return;
+    }
+  } else {
+    if (
+      leaveTypeInfo.value.totalHours - leaveTypeInfo.value.usedHours <
+        new Date(newEmployeeLeave.value.endTime) -
+        new Date(newEmployeeLeave.value.startTime)
+    ) {
+      errorMessage.value = "You don't have enough hours for this leave";
+      return;
+    }
+  }
+
   loading.value = true;
   try {
     const formData = new FormData();
@@ -356,6 +409,8 @@ const submitEmployeeLeave = async () => {
       successMessage.value = data.message;
       resetForm();
       fetchEmployeeLeaves();
+      // get Leave type details
+      getLeaveTypeDeitelsById();
     } else {
       throw new Error(data.message);
     }
@@ -429,15 +484,26 @@ onMounted(() => {
           successMessage
         }}</v-alert>
 
-        <v-row>
-          <v-col cols="12" sm="6" md="3" v-if="vacationFullInfo != null && vacationFullInfo.leaveBased == 0">
-          {{ vacationFullInfo != null ? vacationFullInfo.leaveDaysInYear : '' }}
-          </v-col>
+        <div v-if="leaveTypeInfo && leaveTypeIsError == false">
+          <v-alert title="Attention" type="warning" class="m-5">
+            <div v-if="leaveTypeInfo.leaveBased == 0">
+              This type of leave total days in the year is
+              {{ leaveTypeInfo.totalDays }} and you used
+              {{ leaveTypeInfo.usedDays }} days.
+            </div>
+            <div v-else>
+              This type of leave total hours in the month is
+              {{ leaveTypeInfo.totalHours }} and you used
+              {{ leaveTypeInfo.usedHours }} hours.
+            </div>
+          </v-alert>
+        </div>
 
-          <v-col cols="12" sm="6" md="3" v-if="vacationFullInfo != null && vacationFullInfo.leaveBased == 1">
-          {{ vacationFullInfo != null ? vacationFullInfo.hoursPerMonth : '' }}
-          </v-col>
-        </v-row>
+        <div v-if="leaveTypeIsError == true">
+          <v-alert title="Attention" type="error" class="m-5" >
+            <div>This type of leave is not available for you.</div>
+          </v-alert>
+        </div>
 
         <v-form @submit.prevent="submitEmployeeLeave">
           <v-container class="mb-6">
@@ -521,7 +587,6 @@ onMounted(() => {
                 <v-file-input
                   label="Attach File"
                   accept="image/*"
-                  messages="Include an attachment if any is not required"
                   @change="getFile($event)"
                 ></v-file-input>
               </v-col>
@@ -531,6 +596,7 @@ onMounted(() => {
               type="submit"
               color="primary"
               class="mr-2"
+              :disabled="leaveTypeIsError"
             >
               {{ isEditing ? "Update Leave" : "Add Leave" }}
             </v-btn>
@@ -539,6 +605,7 @@ onMounted(() => {
             </v-btn>
           </v-container>
         </v-form>
+
         <v-container>
           <v-row class="mb-4">
             <v-col cols="12" sm="6" md="4">
@@ -571,6 +638,7 @@ onMounted(() => {
                 <th class="text-left">Status</th>
                 <th class="text-left">Attachment</th>
                 <th class="text-left">Manager Description</th>
+
                 <th class="text-left">created At</th>
                 <th class="text-left">Actions</th>
               </tr>

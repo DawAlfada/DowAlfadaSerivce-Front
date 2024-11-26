@@ -363,6 +363,7 @@ onMounted(() => {
                 <th class="text-left">Leave Days In Year</th>
                 <th class="text-left">Hours Per Month</th>
                 <th class="text-left">Leave Based</th>
+                <th class="text-left">Is Depend Vacation Balance</th>
                 <th class="text-left">Insert Date</th>
                 <th class="text-left">Actions</th>
               </tr>
@@ -406,6 +407,18 @@ onMounted(() => {
                     >Day Based Leave</span
                   >
                   <span v-else class="hour-based">Hour Based Leave</span>
+                </td>
+                <td>
+                  <span
+                    v-if="item.isDependVacationBalance"
+                    class="day-based"
+                    >Depend Vacation Balance</span
+                  >
+                  <span
+                    v-else
+                    class="hour-based"
+                    >Not Depend Vacation Balance</span
+                  >
                 </td>
                 <td>{{ item.createdAt.split("T")[0] }}</td>
                 <td>
