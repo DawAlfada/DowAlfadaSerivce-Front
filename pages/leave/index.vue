@@ -485,7 +485,7 @@ onMounted(() => {
         }}</v-alert>
 
         <div v-if="leaveTypeInfo && leaveTypeIsError == false">
-          <v-alert title="Attention" type="warning" class="m-5">
+          <v-alert title="Attention" type="info" class="m-5">
             <div v-if="leaveTypeInfo.leaveBased == 0">
               This type of leave total days in the year is
               {{ leaveTypeInfo.totalDays }} and you used
