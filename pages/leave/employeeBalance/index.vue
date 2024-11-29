@@ -1,14 +1,13 @@
 <script setup>
 import { ref, onMounted, computed, watch } from "vue";
-import { useUserStore } from "@/store/user"; // Import the store
 import UiParentCard from "@/components/shared/UiParentCard.vue";
 import { useRuntimeConfig } from "#app";
-
+import { useUserStore } from "@/store/user";
 const config = useRuntimeConfig();
 const userStore = useUserStore();
 
 definePageMeta({
-  requiresAdmin: true,
+  requiresAdmin: false,
   title: "Evaluation Balance",
 });
 
@@ -212,7 +211,7 @@ onMounted(() => {
           successMessage
         }}</v-alert>
 
-        <v-form @submit.prevent="submitBalance">
+        <v-form @submit.prevent="submitBalance" v-if="userStore.user.role == 1 || userStore.user.role == 4 || userStore.user.role == 5" >
           <v-container class="mb-6">
             <v-row>
                 <v-col cols="12" sm="6" md="3">
@@ -297,16 +296,7 @@ onMounted(() => {
           </v-container>
         </v-form>
         <v-container>
-          <v-row class="mb-4">
-            <v-col cols="12" sm="6" md="4">
-              <v-text-field
-                v-model="searchTerm"
-                label="Search by Balance Name"
-                @input="fetchBalance"
-              ></v-text-field>
-            </v-col>
-          </v-row>
-
+      
           <v-table density="compact" class="custom-table">
             <thead>
               <tr>

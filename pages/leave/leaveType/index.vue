@@ -99,19 +99,38 @@ const submitVacationType = async () => {
   errorMessage.value = "";
   successMessage.value = "";
 
+  // Validate required fields
   if (!newVacationType.value.name) {
-    errorMessage.value = "Please fill in Leave Type Name fields";
+    errorMessage.value = "Please fill in Leave Type Name field";
     return;
   }
 
   if (
-    !newVacationType.value.leaveDaysInYear &&
-    newVacationType.value.leaveBased == 0 &&
-    (newVacationType.value.workTypeIds == null ||
-      newVacationType.value.workTypeIds.length == 0)
+    newVacationType.value.leaveBased === 0 &&
+    !newVacationType.value.isDependVacationBalance
   ) {
-    errorMessage.value = "Please fill in Leave Days In Year fields";
-    return;
+    if (!newVacationType.value.leaveDaysInYear) {
+      errorMessage.value = "Please fill in Leave Days In Year field";
+      return;
+    }
+
+    if (
+      (!newVacationType.value.workTypeIds ||
+        newVacationType.value.workTypeIds.length === 0)
+    ) {
+      errorMessage.value = "Please select at least one Work Type";
+      return;
+    }
+  }
+
+  if (
+    newVacationType.value.leaveBased === 1 &&
+    !newVacationType.value.isDependVacationBalance
+  ) {
+    if (!newVacationType.value.hoursPerMonth) {
+      errorMessage.value = "Please fill in Hours Per Month field";
+      return;
+    }
   }
 
   loading.value = true;
@@ -300,13 +319,14 @@ onMounted(() => {
                 ></v-select>
               </v-col>
               <v-col
+              
                 cols="12"
                 sm="6"
                 md="3"
                 v-if="
                   (newVacationType.workTypeIds == null ||
                     newVacationType.workTypeIds.length == 0) &
-                  (newVacationType.leaveBased == 0)
+                  (newVacationType.leaveBased == 0 & newVacationType.isDependVacationBalance == false)
                 "
               >
                 <v-text-field
@@ -321,7 +341,7 @@ onMounted(() => {
                 cols="12"
                 sm="6"
                 md="3"
-                v-if="newVacationType.leaveBased == 1"
+                v-if="newVacationType.leaveBased == 1 & newVacationType.isDependVacationBalance == false"
               >
                 <v-text-field
                   type="number"

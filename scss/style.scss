@@ -55,7 +55,8 @@
 }
 
 td {
-    padding: 15px;
+    padding: 10px;
+    
 }
 
 .btn {
@@ -71,7 +72,10 @@ hr {
     border-radius: 5px;
   }
 
-
+  .v-table .v-table__wrapper > table > tbody > tr:not(:last-child) > td, .v-table .v-table__wrapper > table > tbody > tr:not(:last-child) > th {
+    padding: 15px;
+    
+  }
   .bg-warning {
     margin: 15px;
   }

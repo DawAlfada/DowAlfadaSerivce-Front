@@ -54,7 +54,14 @@ const openDialogStatus = (info) => {
 const searchTerm = ref("");
 
 const searchByInfo = ref({
-  employeeLeavestatus: null,
+  employeeLeavestatus: "",
+  EmployeeName: "",
+  VacationTypeName : "",
+  StartDate : "",
+  EndDate : "",
+  Status : "",
+  LeaveBased : "",
+
 });
 
 watch(
@@ -84,7 +91,7 @@ const fetchEmployeeLeaves = async () => {
   loading.value = true;
   try {
     const response = await fetch(
-      `${config.public.apiUrl}/EmployeeLeave?Page=${currentPage.value}&PageSize=${pageSize.value}`,
+      `${config.public.apiUrl}/EmployeeLeave?Page=${currentPage.value}&PageSize=${pageSize.value}&Status=${searchByInfo.value.employeeLeavestatus}&EmployeeName=${searchByInfo.value.EmployeeName}&VacationTypeName=${searchByInfo.value.VacationTypeName}&StartDate=${searchByInfo.value.StartDate}&EndDate=${searchByInfo.value.EndDate}&Status=${searchByInfo.value.Status}&LeaveBased=${searchByInfo.value.LeaveBased}`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -625,6 +632,74 @@ onMounted(() => {
                 label="Filter by Status"
               ></v-select>
             </v-col>
+
+            <v-col cols="12" sm="6" md="4">
+              <v-text-field
+                v-model="searchByInfo.EmployeeName"
+                label="Employee Name"
+                @input="fetchEmployeeLeaves"
+              ></v-text-field>
+            </v-col>
+
+            <v-col cols="12" sm="6" md="4">
+              <v-text-field
+                v-model="searchByInfo.VacationTypeName"
+                label="Vacation Type"
+                @input="fetchEmployeeLeaves"
+              ></v-text-field>
+
+            </v-col>
+
+            <v-col cols="12" sm="6" md="4">
+              <v-text-field
+                v-model="searchByInfo.StartDate"
+                label="Start Date"
+                type="date"
+                @input="fetchEmployeeLeaves"
+              ></v-text-field>
+            </v-col>
+
+            <v-col cols="12" sm="6" md="4">
+              <v-text-field
+                v-model="searchByInfo.EndDate"
+                label="End Date"
+                type="date"
+                @input="fetchEmployeeLeaves"
+              ></v-text-field>
+
+            </v-col>
+
+            <v-col cols="12" sm="6" md="4">
+              <v-select
+                v-model="searchByInfo.Status"
+                :items="employeeLeavestatus"
+                item-title="text"
+                item-value="value"
+                label="Status"
+                @input="fetchEmployeeLeaves"
+              ></v-select>
+
+            </v-col>
+
+            <v-col cols="12" sm="6" md="4">
+              <v-select
+                v-model="searchByInfo.LeaveBased"
+                :items="[
+                   { text: 'All', value: '' },
+                  { text: 'Day Leave Based', value: 0 },
+                 { text: 'Hour Leave Based', value: 1 } 
+                 
+
+                ]"
+                item-title="text"
+                item-value="value"
+                label="Leave Based"
+                @input="fetchEmployeeLeaves"
+              ></v-select>
+
+
+            </v-col>
+
           </v-row>
 
           <v-table density="compact">

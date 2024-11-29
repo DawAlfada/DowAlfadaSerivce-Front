@@ -40,6 +40,64 @@ watch(currentPage, () => {
   fetchReport();
 });
 
+const isSearch = ref(false);  
+
+const searchNow = () => {
+  if (employeeName.value === "" && startDate.value === "" && endDate.value === "" && leaveBased.value === "" && vacationTypeId.value === "") { 
+    errorMessage.value = "Please enter at least one search criteria";
+    return;
+  }
+  isSearch.value = true;
+  currentPage.value = 1;
+  fetchReport();
+};
+
+const showAll = () => {
+  isSearch.value = false;
+  employeeName.value = "";
+  startDate.value = "";
+  endDate.value = "";
+  leaveBased.value = "";
+  vacationTypeId.value = "";
+  currentPage.value = 1;
+  fetchReport();
+};
+
+
+// Download Report
+const downloadReport = async () => {
+  loading.value = true;
+  try {
+    const response = await fetch(
+      `${config.public.apiUrl}/EmployeeLeave/DownloadReport?EmployeeName=${employeeName.value}&StartDate=${startDate.value}&EndDate=${endDate.value}&LeaveBased=${leaveBased.value}&VacationTypeId=${vacationTypeId.value}`,
+      {
+        headers: {
+          Authorization: `Bearer ${userStore.token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to download report");
+    }
+
+    // Convert response to Blob for file download
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "EmployeeLeaveReport.xlsx");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link); // Clean up after download
+  } catch (error) {
+    errorMessage.value = "Failed to download Report";
+    console.error("Error downloading report:", error);
+  } finally {
+    loading.value = false;
+  }
+};
+
 const searchTerm = ref("");
 const searchInfo = ref({});
 const employeeName = ref("");
@@ -155,11 +213,21 @@ onMounted(() => {
                 required
               ></v-select>
             </v-col>
-
-            <!-- btn -->
+          
             <v-col cols="12" sm="6" md="4">
-              <v-btn @click="fetchReport" color="primary" dark>Search</v-btn>
+              <v-btn @click="searchNow()" color="primary" dark>Search</v-btn>
+              <v-btn v-if="isSearch" @click="showAll()" color="info" dark>Show All</v-btn>
+              <v-btn
+                v-if="isSearch"
+                @click="downloadReport()"
+                color="warning"
+                dark
+                >Download Report</v-btn
+              >
             </v-col>
+             
+       
+        
           </v-row>
 
           <v-table density="compact" class="custom-table">
