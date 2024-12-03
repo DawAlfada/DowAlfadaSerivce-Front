@@ -364,25 +364,25 @@ const submitEmployeeLeave = async () => {
   }
 
   // check if total days or hours are available
-  if (leaveTypeInfo.value.leaveBased == 0) {
-    if (
-      leaveTypeInfo.value.totalDays - leaveTypeInfo.value.usedDays <
-      new Date(newEmployeeLeave.value.endDate) -
-        new Date(newEmployeeLeave.value.startDate)
-    ) {
-      errorMessage.value = "You don't have enough days for this leave";
-      return;
-    }
-  } else {
-    if (
-      leaveTypeInfo.value.totalHours - leaveTypeInfo.value.usedHours <
-        new Date(newEmployeeLeave.value.endTime) -
-        new Date(newEmployeeLeave.value.startTime)
-    ) {
-      errorMessage.value = "You don't have enough hours for this leave";
-      return;
-    }
-  }
+  // if (leaveTypeInfo.value.leaveBased == 0) {
+  //   if (
+  //     leaveTypeInfo.value.totalDays - leaveTypeInfo.value.usedDays <
+  //     new Date(newEmployeeLeave.value.endDate) -
+  //       new Date(newEmployeeLeave.value.startDate)
+  //   ) {
+  //     errorMessage.value = "You don't have enough days for this leave";
+  //     return;
+  //   }
+  // } else {
+  //   if (
+  //     leaveTypeInfo.value.totalHours - leaveTypeInfo.value.usedHours <
+  //       new Date(newEmployeeLeave.value.endTime) -
+  //       new Date(newEmployeeLeave.value.startTime)
+  //   ) {
+  //     errorMessage.value = "You don't have enough hours for this leave";
+  //     return;
+  //   }
+  // }
 
   loading.value = true;
   try {
@@ -633,7 +633,7 @@ onMounted(() => {
               ></v-select>
             </v-col>
 
-            <v-col cols="12" sm="6" md="4">
+            <v-col cols="12" sm="6" md="4"  v-if="userStore.user.role == 1 || userStore.user.role == 4 || userStore.user.role == 5" >
               <v-text-field
                 v-model="searchByInfo.EmployeeName"
                 label="Employee Name"
@@ -799,15 +799,10 @@ onMounted(() => {
 
                 <td>{{ formatDate(Leave.createdAt) }}</td>
                 <td
-                  v-if="
-                    userStore.user.role == 1 ||
-                    userStore.user.role == 3 ||
-                    userStore.user.role == 4 ||
-                    userStore.user.role == 5
-                  "
+               
                 >
                   <v-btn
-                    v-if="Leave.status == 0 || Leave.status == 4"
+                    v-if="Leave.status == 0 || Leave.status == 3"
                     icon="mdi-pencil"
                     @click="
                       isEditing = true;
