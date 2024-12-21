@@ -2,14 +2,12 @@
 import { ref, onMounted, computed, watch } from "vue";
 import { useUserStore } from "@/store/user";
 import UiParentCard from "@/components/shared/UiParentCard.vue";
-import { useRuntimeConfig } from '#app';
+import { useRuntimeConfig } from "#app";
 
-
-definePageMeta({
-  requiresAdmin: true, 
-  title: "Evaluation Report",
-});
-
+// definePageMeta({
+//   requiresAdmin: true,
+//   title: "Evaluation Report",
+// });
 
 const config = useRuntimeConfig();
 import {
@@ -55,7 +53,6 @@ const selectedDepartment = (departmentId) => {
   fetchEmployees();
 };
 
-
 const fetchWorkTypes = async () => {
   loading.value = true;
   try {
@@ -64,7 +61,7 @@ const fetchWorkTypes = async () => {
       {
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${userStore.token}`, 
+          Authorization: `Bearer ${userStore.token}`,
         },
       }
     );
@@ -80,22 +77,28 @@ const fetchWorkTypes = async () => {
   }
 };
 
-
 const roles = [
   { name: "Admin", value: 1 },
-  { name: "Employee", value: 2 },  
-  { name: "Manager", value: 3 },  
-  { name: "CEO", value: 4 },  
-  { name: "Hr", value: 5 },  
-  { name: "It", value: 6 },  
-  { name: "Finance", value: 7 },  
+  { name: "Employee", value: 2 },
+  { name: "Manager", value: 3 },
+  { name: "CEO", value: 4 },
+  { name: "Hr", value: 5 },
+  { name: "It", value: 6 },
+  { name: "Finance", value: 7 },
 ];
 
+const genders = [
+  { name: "Male", value: "Male" },
+  { name: "Famale", value: "Famale" },
+];
+
+const employeeTypes = [
+  { name: "Employee", value: "Employee" },
+];
 
 const GetRoleName = (roleId) => {
   return roles.find((role) => role.value === roleId)?.name || "-";
 };
-
 
 const updateInfo = async () => {
   loading.value = true;
@@ -133,7 +136,6 @@ const updateInfo = async () => {
   }
 };
 
-
 watch([errorMessage, successMessage], () => {
   if (errorMessage.value || successMessage.value) {
     setTimeout(() => {
@@ -142,10 +144,6 @@ watch([errorMessage, successMessage], () => {
     }, 4000);
   }
 });
-
-
-
-
 
 const employees = ref([]);
 const fetchEmployees = async () => {
@@ -190,8 +188,6 @@ const filteredEmployees = computed(() => {
   );
 });
 
-
-
 const showEditDialog = ref(false);
 const showEmailDialog = ref(false);
 const showDetailsDialog = ref(false);
@@ -200,22 +196,40 @@ const employeeDetails = ref(null);
 const emailTitle = ref("");
 const emailMessage = ref("");
 const employeeTotalCount = ref(0);
-
+const newEmployee = ref({
+  odooEmployeeId: "",
+  departmentId: "",
+  image512: "",
+  avatar512: "",
+  jobTitle: "",
+  gender: "",
+  name: "",
+  birthday: "",
+  workPhone: "",
+  mobilePhone: "",
+  workEmail: "",
+  displayName: "",
+  employeeType: "Employee",
+  isManager: true,
+  password: "",
+  role: "",
+  workTypeId: null,
+  directDate: "",
+});
 
 const ShowUpdateDialog = (item) => {
-     showEditInfoDialog.value = true;
-      editingEmployee.value = item;
-      editingEmployee.value.workTypeId = item.workType != null ? item.workType.id : null;
-      editingEmployee.value.directDate = item.directDate != null ? item.directDate.toString().split("T")[0] : null;
-     
-}
+  showEditInfoDialog.value = true;
+  editingEmployee.value = item;
+  editingEmployee.value.workTypeId =
+    item.workType != null ? item.workType.id : null;
+  editingEmployee.value.directDate =
+    item.directDate != null ? item.directDate.toString().split("T")[0] : null;
+};
 
-
-
-const  syncEmployees = async () => {
+const syncEmployees = async () => {
   loading.value = true;
   errorMessage.value = null;
- 
+
   successMessage.value = "Syncing employees, this may take a while";
   try {
     const response = await fetch(
@@ -236,7 +250,6 @@ const  syncEmployees = async () => {
     } else {
       successMessage.value = null;
       throw new Error(data?.error || "Failed to sync employees");
-
     }
   } catch (error) {
     successMessage.value = null;
@@ -245,8 +258,6 @@ const  syncEmployees = async () => {
     loading.value = false;
   }
 };
-
-
 
 const openEmailDialog = async (employee) => {
   console.log(`Open email dialog for employee: ${employee.name}`);
@@ -299,6 +310,69 @@ const sendEmail = async () => {
     showEmailDialog.value = false;
   }
 };
+
+const submitEmployee = async () => {
+  loading.value = true;
+  errorMessage.value = null;
+  successMessage.value = null;
+
+  try {
+    const response = await fetch(`${config.public.apiUrl}/Employee`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userStore.token}`,
+      },
+      body: JSON.stringify(newEmployee.value),
+    });
+
+    const data = await response.json().catch(() => null);
+    if (response.ok) {
+      successMessage.value = "Employee created successfully";
+      fetchEmployees();
+      resetForm();
+    } else {
+      throw new Error(data?.error || "Failed to create employee");
+    }
+  } catch (error) {
+    errorMessage.value = error.message || "Failed to create employee";
+  } finally {
+    loading.value = false;
+  }
+};
+
+const resetForm = () => {
+  newEmployee.value = {
+    odooEmployeeId: "",
+    departmentId: "",
+    image512: "",
+    avatar512: "",
+    jobTitle : "",
+    birthday : "",
+    workPhone : "",
+    mobilePhone : "",
+    workEmail : "",
+    displayName : "",
+    employeeType : "Employee",
+    isManager : false,
+    password : "",
+    role : "",
+    workTypeId : null,
+    directDate : "",
+  };
+  };
+
+const getFile = (event, type) => {
+  const file = event.target.files[0];
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    newEmployee.value[type] = e.target.result.split(",")[1];
+    alert("Image Uploaded Successfully");
+  };
+  reader.readAsDataURL(file);
+};
+
+
 
 const updatePassword = async () => {
   loading.value = true;
@@ -363,7 +437,6 @@ const fetchDepartments = async () => {
   <v-row>
     <v-col cols="12" md="12">
       <UiParentCard title="Manage Employees" :subtitle="employeeTotalCount">
-       
         <v-alert v-if="errorMessage" type="error" dismissible>{{
           errorMessage
         }}</v-alert>
@@ -371,16 +444,213 @@ const fetchDepartments = async () => {
           successMessage
         }}</v-alert>
 
+        <v-form @submit.prevent="submitEmployee">
+          <v-container class="mb-6">
+            <v-row>
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="newEmployee.odooEmployeeId"
+                  label="Odoo Employee ID"
+                  required
+                ></v-text-field>
+              </v-col>
+              
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="newEmployee.name"
+                  label="Name"
+                  required
+                ></v-text-field>
+              </v-col>
+
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="newEmployee.displayName"
+                  label="Display Name"
+                  required
+                ></v-text-field>
+              </v-col>
+
+              
+              <v-col cols="12" sm="6" md="3">
+                <v-select
+                  v-model="newEmployee.departmentId"
+                  :items="departments"
+                  item-title="name"
+                  item-value="oodoDepartmentId"
+                  label="Department"
+                  clearable
+                >
+                  <template v-slot:item="{ props, item }">
+                    <v-list-item
+                      v-bind="props"
+                      :subtitle="item.raw.displayName"
+                    ></v-list-item>
+                  </template>
+                </v-select>
+              </v-col>
+             
+            </v-row>
+            <v-row>
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="newEmployee.jobTitle"
+                  label="Job Title"
+                  required
+                ></v-text-field>
+              </v-col>
+              <!-- Gandar -->
+              <v-col cols="12" sm="6" md="3">
+                <v-select
+                  v-model="newEmployee.gender"
+                  :items="genders"
+                  item-title="name"
+                  item-value="value"
+                  label="Gender"
+                  clearable
+                >
+                </v-select>
+              </v-col>
+
+
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="newEmployee.birthday"
+                  label="Birthday"
+                  required
+                ></v-text-field>
+              </v-col>
+
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="newEmployee.workPhone"
+                  label="Work Phone"
+                  required
+                ></v-text-field>
+              </v-col>
+
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="newEmployee.mobilePhone"
+                  label="Mobile Phone"
+                  required
+                ></v-text-field>
+              </v-col>
+
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="newEmployee.workEmail"
+                  label="Work Email"
+                  required
+                ></v-text-field>
+              </v-col>
+
+            
+
+              <v-col cols="12" sm="6" md="3">
+                <v-select
+                  v-model="newEmployee.employeeType"
+                  :items="employeeTypes"
+                  item-title="name"
+                  item-value="value"
+                  label="Employee Type"
+                  clearable
+                >
+                </v-select>
+              </v-col>
+
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="newEmployee.password"
+                  label="Password"
+                  required
+                ></v-text-field>
+              </v-col>
+
+              <v-col cols="12" sm="6" md="3">
+                <v-select
+                  v-model="newEmployee.role"
+                  :items="roles"
+                  item-title="name"
+                  item-value="value"
+                  label="Role"
+                ></v-select>
+              </v-col>
+
+              <v-col cols="12" sm="6" md="3">
+                <v-select
+                  v-model="newEmployee.workTypeId"
+                  :items="workTypes"
+                  item-title="name"
+                  item-value="id"
+                  label="Work Type"
+                ></v-select>
+              </v-col>
+
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="newEmployee.directDate"
+                  label="Direct Date"
+                  type="date"
+                ></v-text-field>
+              </v-col>
+
+           
+        
+
+              <v-col cols="12 mb-5" sm="6" md="3">
+                <v-file-input
+                  label="Image"
+                  accept="image/*"
+                  @change="getFile($event , 'image512')"
+                ></v-file-input>
+              </v-col>
+
+              <v-col cols="12 mb-5" sm="6" md="3">
+                <v-file-input
+                  label="Avatar"
+                  accept="image/*"
+                  @change="getFile($event , 'avatar512')"
+                ></v-file-input>
+              </v-col>
+
+          
+
+    
+              <!-- is Manager -->
+              <v-col cols="12" sm="6" md="3">
+                <v-checkbox
+                  v-model="newEmployee.isManager"
+                  label="Is Manager"
+                  required
+                ></v-checkbox>
+              </v-col>
+            </v-row>
+            <v-btn
+              :loading="loading"
+              type="submit"
+              color="primary"
+              class="mr-2"
+            >
+              {{ "Create Employee" }}
+            </v-btn>
+            <v-btn @click="resetForm" color="secondary" :disabled="loading"
+              >Cancel</v-btn
+            >
+          </v-container>
+        </v-form>
+
         <v-container>
           <v-row class="mb-4">
-            <v-col cols="12" sm="12" md="12" class="d-flex align-center justify-space-between">
+            <v-col
+              cols="12"
+              sm="12"
+              md="12"
+              class="d-flex align-center justify-space-between"
+            >
               <!-- title -->
               <h2 class="text-h5">Sync Employees</h2>
-              <v-btn
-                color="primary"
-                @click="syncEmployees"
-                :loading="loading"
-              >
+              <v-btn color="primary" @click="syncEmployees" :loading="loading">
                 Sync Employees from Odoo
               </v-btn>
             </v-col>
@@ -428,18 +698,10 @@ const fetchDepartments = async () => {
             >
               <v-card-text>
                 <!-- star icon for managers  -->
-                <v-icon
-                  v-if="item.isManager"
-                  class="mr-2"
-                  color="primary"
+                <v-icon v-if="item.isManager" class="mr-2" color="primary"
                   >mdi-star</v-icon
                 >
-                <v-icon
-                  v-else
-                  class="mr-2"
-                  color="primary"
-                  >mdi-account</v-icon
-                >
+                <v-icon v-else class="mr-2" color="primary">mdi-account</v-icon>
                 <div class="d-flex align-center">
                   <v-avatar size="80" class="mr-4">
                     <img
@@ -473,47 +735,46 @@ const fetchDepartments = async () => {
                 </div>
               </v-card-text>
               <v-card-actions class="justify-space-between pa-4">
-  <v-btn
-    color="primary"
-    outlined
-    class="mx-2"
-    @click="ShowUpdateDialog(item)"
-  >
-    <v-icon left>mdi-pencil</v-icon>
-    Update Info
-  </v-btn>
-  <v-btn
-    color="secondary"
-    outlined
-    class="mx-2"
-    @click="
-      showEditDialog = true;
-      editingEmployee = item;
-    "
-  >
-    <v-icon left>mdi-key</v-icon>
-    Edit Password
-  </v-btn>
-  <v-btn
-    color="success"
-    outlined
-    class="mx-2"
-    @click="openEmailDialog(item)"
-  >
-    <v-icon left>mdi-email</v-icon>
-    Send Email
-  </v-btn>
-  <v-btn
-    color="info"
-    outlined
-    class="mx-2"
-    @click="showDetails(item)"
-  >
-    <v-icon left>mdi-information-outline</v-icon>
-    Details
-  </v-btn>
-</v-card-actions>
-
+                <v-btn
+                  color="primary"
+                  outlined
+                  class="mx-2"
+                  @click="ShowUpdateDialog(item)"
+                >
+                  <v-icon left>mdi-pencil</v-icon>
+                  Update Info
+                </v-btn>
+                <v-btn
+                  color="secondary"
+                  outlined
+                  class="mx-2"
+                  @click="
+                    showEditDialog = true;
+                    editingEmployee = item;
+                  "
+                >
+                  <v-icon left>mdi-key</v-icon>
+                  Edit Password
+                </v-btn>
+                <v-btn
+                  color="success"
+                  outlined
+                  class="mx-2"
+                  @click="openEmailDialog(item)"
+                >
+                  <v-icon left>mdi-email</v-icon>
+                  Send Email
+                </v-btn>
+                <v-btn
+                  color="info"
+                  outlined
+                  class="mx-2"
+                  @click="showDetails(item)"
+                >
+                  <v-icon left>mdi-information-outline</v-icon>
+                  Details
+                </v-btn>
+              </v-card-actions>
             </v-card>
           </div>
 
@@ -535,13 +796,12 @@ const fetchDepartments = async () => {
       <v-card-text>
         <div>
           <v-select
-          v-model="editingEmployee.role"
-          :items="roles"
-          item-title="name"
-          item-value="value"
-          label="Role"
-        ></v-select>
-        
+            v-model="editingEmployee.role"
+            :items="roles"
+            item-title="name"
+            item-value="value"
+            label="Role"
+          ></v-select>
         </div>
         <!-- workTypes  -->
         <v-select
@@ -550,13 +810,14 @@ const fetchDepartments = async () => {
           item-title="name"
           item-value="id"
           label="Work Type"
-          > </v-select>
-          <v-text-field
-            v-model="editingEmployee.directDate"
-            label="Direct Date"
-            type="date"
-            > </v-text-field>
-      
+        >
+        </v-select>
+        <v-text-field
+          v-model="editingEmployee.directDate"
+          label="Direct Date"
+          type="date"
+        >
+        </v-text-field>
       </v-card-text>
       <v-card-actions>
         <v-btn text @click="showEditInfoDialog = false">Cancel</v-btn>
@@ -584,7 +845,8 @@ const fetchDepartments = async () => {
               <strong>Job Title:</strong> {{ employeeDetails?.jobTitle || "-" }}
             </p>
             <p>
-              <strong>Rols In System :</strong> {{ GetRoleName(employeeDetails?.role) || "-" }}
+              <strong>Rols In System :</strong>
+              {{ GetRoleName(employeeDetails?.role) || "-" }}
             </p>
             <p>
               <strong>Department:</strong>
@@ -608,8 +870,11 @@ const fetchDepartments = async () => {
             <!-- brithday -->
             <p>
               <strong>Brithday:</strong>
-              {{ employeeDetails?.birthday != false ? employeeDetails?.birthday?.split("T")[0] || "-"  : "-" }}
-
+              {{
+                employeeDetails?.birthday != false
+                  ? employeeDetails?.birthday?.split("T")[0] || "-"
+                  : "-"
+              }}
             </p>
           </v-col>
         </v-row>
@@ -631,10 +896,13 @@ const fetchDepartments = async () => {
             </p>
           </v-col>
           <v-col cols="6">
-  
             <p>
               <strong>Direct Date:</strong>
-              {{ employeeDetails?.directDate != null ? employeeDetails?.directDate?.split("T")[0] || "-"  : "-" }}
+              {{
+                employeeDetails?.directDate != null
+                  ? employeeDetails?.directDate?.split("T")[0] || "-"
+                  : "-"
+              }}
             </p>
             <p>
               <strong>Created At:</strong>

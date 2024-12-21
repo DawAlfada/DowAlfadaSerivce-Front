@@ -5,10 +5,10 @@ import UiParentCard from "@/components/shared/UiParentCard.vue";
 import { useRuntimeConfig } from '#app';
 
 
-definePageMeta({
-  requiresAdmin: true, 
-  title: "Feedbacks",
-});
+// definePageMeta({
+//   requiresAdmin: true, 
+//   title: "Feedbacks",
+// });
 
 
 const config = useRuntimeConfig();

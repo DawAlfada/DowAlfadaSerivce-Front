@@ -6,10 +6,10 @@ import { useUserStore } from "@/store/user";
 const config = useRuntimeConfig();
 const userStore = useUserStore();
 
-definePageMeta({
-  requiresAdmin: false,
-  title: "Evaluation Balance",
-});
+// definePageMeta({
+//   requiresAdmin: false,
+//   title: "Evaluation Balance",
+// });
 
 const Balance = ref([]);
 const totalCount = ref(0);

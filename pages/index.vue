@@ -48,6 +48,15 @@ import {
                 <p class="text-body-1 text-muted">
                     Daw Alfada was founded in 2015 with the goal of serving the information and communication technology (ICT) market in Iraq. Daw Alfada’s management and employees have vast experience and understanding in the fields of network engineering, communication, information technology and project management
                 </p>
+                <!-- login -->
+                <VBtn
+                  color="primary"
+                  class="mt-6"
+                  @click="router.push('auth/login')"
+                >
+
+                  Login
+                </VBtn>
               </VCardText>
             </VCard>
           </VCol>

@@ -7,10 +7,10 @@ import { useRuntimeConfig } from '#app';
 const config = useRuntimeConfig();
 const userStore = useUserStore();
 
-definePageMeta({
-  requiresAdmin: true, 
-  title: "Evaluation workTypes",
-});
+// definePageMeta({
+//   requiresAdmin: true, 
+//   title: "Evaluation workTypes",
+// });
 
 
 const workTypes = ref([]);

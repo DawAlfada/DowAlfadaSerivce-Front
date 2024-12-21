@@ -62,10 +62,10 @@ const config = useRuntimeConfig();
 const userStore = useUserStore();
 
 
-definePageMeta({
-  requiresAdmin: true, 
-  title: "Dashboard",
-});
+// definePageMeta({
+//   requiresAdmin: true, 
+//   title: "Dashboard",
+// });
 
 
 const dataCounts = ref([]);

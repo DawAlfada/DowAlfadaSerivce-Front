@@ -364,7 +364,7 @@ const submitEmployeeLeave = async () => {
   }
 
   // check if total days or hours are available
-  // if (leaveTypeInfo.value.leaveBased == 0) {
+  // if (leaveTrypeInfo.value.leaveBased == 0) {
   //   if (
   //     leaveTypeInfo.value.totalDays - leaveTypeInfo.value.usedDays <
   //     new Date(newEmployeeLeave.value.endDate) -

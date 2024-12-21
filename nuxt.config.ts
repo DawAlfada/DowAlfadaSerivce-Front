@@ -4,15 +4,32 @@ export default defineNuxtConfig({
   typescript: {
     shim: false,
   },
-  build: {
-    transpile: ["vuetify"],
-  },
+
   vite: {
     server: {
       hmr: {
-        clientPort: 3000, // Replace with the desired port number (default: 3000)
+        clientPort: 3000, 
       },
     },
+  },
+
+  app: {
+    baseURL: '/',
+    buildAssetsDir: '/_nuxt/',
+  },
+  
+  nitro: {
+    preset: 'static',
+    output: {
+      publicDir: '.output/public'
+    }
+  },
+  
+  router: {
+    options: {
+      hashMode: true 
+    },
+
   },
   runtimeConfig: {
     public: {

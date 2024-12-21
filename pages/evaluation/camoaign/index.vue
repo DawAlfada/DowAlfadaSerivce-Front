@@ -8,10 +8,10 @@ const config = useRuntimeConfig();
 // Initialize the user store to access the token
 const userStore = useUserStore();
 
-definePageMeta({
-  requiresAdmin: true, 
-  title: "Evaluation Campaigns",
-});
+// definePageMeta({
+//   requiresAdmin: true, 
+//   title: "Evaluation Campaigns",
+// });
 
 
 // Data variables

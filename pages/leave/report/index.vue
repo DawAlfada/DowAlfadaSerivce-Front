@@ -7,10 +7,10 @@ import { useRuntimeConfig } from "#app";
 const config = useRuntimeConfig();
 const userStore = useUserStore();
 
-definePageMeta({
-  requiresAdmin: true,
-  title: "Evaluation Report",
-});
+// definePageMeta({
+//   requiresAdmin: true,
+//   title: "Evaluation Report",
+// });
 
 const Report = ref([]);
 const totalCount = ref(0);

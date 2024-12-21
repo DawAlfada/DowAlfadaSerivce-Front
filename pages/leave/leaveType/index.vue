@@ -7,10 +7,10 @@ import { useRuntimeConfig } from "#app";
 const config = useRuntimeConfig();
 const userStore = useUserStore();
 
-definePageMeta({
-  requiresAdmin: true,
-  title: "Evaluation VacationType",
-});
+// definePageMeta({
+//   requiresAdmin: true,
+//   title: "Evaluation VacationType",
+// });
 
 const VacationType = ref([]);
 const totalCount = ref(0);
