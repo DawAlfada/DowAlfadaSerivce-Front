@@ -362,13 +362,53 @@ const resetForm = () => {
   };
   };
 
-const getFile = (event, type) => {
+  const getFile = (event, type) => {
   const file = event.target.files[0];
   const reader = new FileReader();
+  const img = new Image();
+  
   reader.onload = (e) => {
-    newEmployee.value[type] = e.target.result.split(",")[1];
-    alert("Image Uploaded Successfully");
+    img.src = e.target.result;
+
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      const maxWidth = 400; 
+      const maxHeight = 400; 
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > maxWidth) {
+          height *= maxWidth / width;
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width *= maxHeight / height;
+          height = maxHeight;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      // Draw the image onto the canvas
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Get the compressed image as Base64
+      const compressedBase64 = canvas.toDataURL("image/jpeg", 0.8); // Adjust the quality (0.8 for 80%)
+
+      // Remove the Base64 prefix
+      const base64Data = compressedBase64.split(",")[1];
+
+      // Save the compressed Base64 string
+      newEmployee.value[type] = base64Data;
+
+    };
   };
+
   reader.readAsDataURL(file);
 };
 
