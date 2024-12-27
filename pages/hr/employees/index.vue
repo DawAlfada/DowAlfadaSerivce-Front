@@ -29,6 +29,7 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 const totalPages = computed(() => Math.ceil(totalCount.value / pageSize.value));
 const workTypes = ref([]);
+const showAddEmployee= ref(false);
 
 const handleImageError = (event, fallbackImage) => {
   event.target.src = `data:image/jpeg;base64,${fallbackImage}`;
@@ -114,11 +115,7 @@ const updateInfo = async () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${userStore.token}`,
         },
-        body: JSON.stringify({
-          role: editingEmployee.value.role,
-          workTypeId: editingEmployee.value.workTypeId,
-          directDate: editingEmployee.value.directDate,
-        }),
+        body: JSON.stringify(editingEmployee.value),
       }
     );
 
@@ -191,7 +188,26 @@ const filteredEmployees = computed(() => {
 const showEditDialog = ref(false);
 const showEmailDialog = ref(false);
 const showDetailsDialog = ref(false);
-const editingEmployee = ref(null);
+const editingEmployee = ref({
+  odooEmployeeId: "",
+  departmentId: "",
+  image512: "",
+  avatar512: "",
+  jobTitle: "",
+  gender: "",
+  name: "",
+  birthday: "",
+  workPhone: "",
+  mobilePhone: "",
+  workEmail: "",
+  displayName: "",
+  employeeType: "Employee",
+  isManager: true,
+  password: "",
+  role: "",
+  workTypeId: null,
+  directDate: "",
+});
 const employeeDetails = ref(null);
 const emailTitle = ref("");
 const emailMessage = ref("");
@@ -224,6 +240,21 @@ const ShowUpdateDialog = (item) => {
     item.workType != null ? item.workType.id : null;
   editingEmployee.value.directDate =
     item.directDate != null ? item.directDate.toString().split("T")[0] : null;
+  editingEmployee.value.odooEmployeeId = item.odooEmployeeId;
+  editingEmployee.value.departmentId  = item.departmentId;
+  editingEmployee.value.jobTitle  = item.jobTitle;
+  editingEmployee.value.gender  = item.gender;
+  editingEmployee.value.name  = item.name;
+  editingEmployee.value.birthday  = item.birthday;
+  editingEmployee.value.workPhone  = item.workPhone;
+  editingEmployee.value.workEmail  = item.workEmail;
+  editingEmployee.value.displayName  = item.displayName;
+  editingEmployee.value.isManager  = item.isManager;
+  editingEmployee.value.role  = item.role;
+  editingEmployee.value.avatar512  = item.avatar512;
+  editingEmployee.value.image512  = item.image512;
+
+  
 };
 
 const syncEmployees = async () => {
@@ -362,11 +393,17 @@ const resetForm = () => {
   };
   };
 
+  const toggleAddEmployeeForm = () => {
+      showAddEmployee.value = !showAddEmployee.value;
+    }
+  
+
   const getFile = (event, type) => {
   const file = event.target.files[0];
   const reader = new FileReader();
   const img = new Image();
-  
+
+ 
   reader.onload = (e) => {
     img.src = e.target.result;
 
@@ -374,8 +411,8 @@ const resetForm = () => {
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
 
-      const maxWidth = 400; 
-      const maxHeight = 400; 
+      const maxWidth = 512; 
+      const maxHeight = 512; 
       let width = img.width;
       let height = img.height;
 
@@ -393,17 +430,9 @@ const resetForm = () => {
 
       canvas.width = width;
       canvas.height = height;
-
-      // Draw the image onto the canvas
       ctx.drawImage(img, 0, 0, width, height);
-
-      // Get the compressed image as Base64
-      const compressedBase64 = canvas.toDataURL("image/jpeg", 0.8); // Adjust the quality (0.8 for 80%)
-
-      // Remove the Base64 prefix
+      const compressedBase64 = canvas.toDataURL("image/jpeg", 0.8); 
       const base64Data = compressedBase64.split(",")[1];
-
-      // Save the compressed Base64 string
       newEmployee.value[type] = base64Data;
 
     };
@@ -411,6 +440,49 @@ const resetForm = () => {
 
   reader.readAsDataURL(file);
 };
+
+const getEditFile = (event, type) => {
+  const file = event.target.files[0];
+  const reader = new FileReader();
+  const img = new Image();
+  
+  reader.onload = (e) => {
+    img.src = e.target.result;
+
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      const maxWidth = 512; 
+      const maxHeight = 512; 
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > maxWidth) {
+          height *= maxWidth / width;
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width *= maxHeight / height;
+          height = maxHeight;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(img, 0, 0, width, height);
+      const compressedBase64 = canvas.toDataURL("image/jpeg", 0.8); 
+      const base64Data = compressedBase64.split(",")[1];
+      editingEmployee.value[type] = base64Data;
+
+    };
+  };
+
+  reader.readAsDataURL(file);
+};
+
 
 
 
@@ -459,7 +531,7 @@ const fetchDepartments = async () => {
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${userStore.token}`, // Use the token from the store
+          Authorization: `Bearer ${userStore.token}`, 
         },
       }
     );
@@ -484,7 +556,12 @@ const fetchDepartments = async () => {
           successMessage
         }}</v-alert>
 
-        <v-form @submit.prevent="submitEmployee">
+     <v-btn color="primary" @click="toggleAddEmployeeForm()" class="mb-4 ml-5">
+      <v-icon left>{{ showAddEmployee ? 'mdi-minus' : 'mdi-plus' }}</v-icon>
+      {{ showAddEmployee ? 'Hide Form' : 'Add Employee' }}
+    </v-btn>
+
+        <v-form @submit.prevent="submitEmployee" v-if="showAddEmployee">
           <v-container class="mb-6">
             <v-row>
               <v-col cols="12" sm="6" md="3">
@@ -557,6 +634,7 @@ const fetchDepartments = async () => {
                 <v-text-field
                   v-model="newEmployee.birthday"
                   label="Birthday"
+                  type="date"
                   required
                 ></v-text-field>
               </v-col>
@@ -830,34 +908,188 @@ const fetchDepartments = async () => {
   </v-row>
 
   <!-- showEditInfoDialog -->
-  <v-dialog v-model="showEditInfoDialog" max-width="500px">
+  <v-dialog v-model="showEditInfoDialog" max-width="1000px">
     <v-card>
       <v-card-title>Edit Info for {{ editingEmployee?.name }}</v-card-title>
       <v-card-text>
-        <div>
-          <v-select
-            v-model="editingEmployee.role"
-            :items="roles"
-            item-title="name"
-            item-value="value"
-            label="Role"
-          ></v-select>
-        </div>
-        <!-- workTypes  -->
-        <v-select
-          v-model="editingEmployee.workTypeId"
-          :items="workTypes"
-          item-title="name"
-          item-value="id"
-          label="Work Type"
-        >
-        </v-select>
-        <v-text-field
-          v-model="editingEmployee.directDate"
-          label="Direct Date"
-          type="date"
-        >
-        </v-text-field>
+        <v-container class="mb-6">
+            <v-row>
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="editingEmployee.odooEmployeeId"
+                  label="Odoo Employee ID"
+                  required
+                ></v-text-field>
+              </v-col>
+              
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="editingEmployee.name"
+                  label="Name"
+                  required
+                ></v-text-field>
+              </v-col>
+
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="editingEmployee.displayName"
+                  label="Display Name"
+                  required
+                ></v-text-field>
+              </v-col>
+
+              
+              <v-col cols="12" sm="6" md="3">
+                <v-select
+                  v-model="editingEmployee.departmentId"
+                  :items="departments"
+                  item-title="name"
+                  item-value="oodoDepartmentId"
+                  label="Department"
+                  clearable
+                >
+                  <template v-slot:item="{ props, item }">
+                    <v-list-item
+                      v-bind="props"
+                      :subtitle="item.raw.displayName"
+                    ></v-list-item>
+                  </template>
+                </v-select>
+              </v-col>
+             
+            </v-row>
+            <v-row>
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="editingEmployee.jobTitle"
+                  label="Job Title"
+                  required
+                ></v-text-field>
+              </v-col>
+              <!-- Gandar -->
+              <v-col cols="12" sm="6" md="3">
+                <v-select
+                  v-model="editingEmployee.gender"
+                  :items="genders"
+                  item-title="name"
+                  item-value="value"
+                  label="Gender"
+                  clearable
+                >
+                </v-select>
+              </v-col>
+
+
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="editingEmployee.birthday"
+                  label="Birthday"
+                  type="date"
+                  required
+                ></v-text-field>
+              </v-col>
+
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="editingEmployee.workPhone"
+                  label="Work Phone"
+                  required
+                ></v-text-field>
+              </v-col>
+
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="editingEmployee.mobilePhone"
+                  label="Mobile Phone"
+                  required
+                ></v-text-field>
+              </v-col>
+
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="editingEmployee.workEmail"
+                  label="Work Email"
+                  required
+                ></v-text-field>
+              </v-col>
+
+            
+
+              <v-col cols="12" sm="6" md="3">
+                <v-select
+                  v-model="editingEmployee.employeeType"
+                  :items="employeeTypes"
+                  item-title="name"
+                  item-value="value"
+                  label="Employee Type"
+                  clearable
+                >
+                </v-select>
+              </v-col>
+
+             
+              <v-col cols="12" sm="6" md="3">
+                <v-select
+                  v-model="editingEmployee.role"
+                  :items="roles"
+                  item-title="name"
+                  item-value="value"
+                  label="Role"
+                ></v-select>
+              </v-col>
+
+              <v-col cols="12" sm="6" md="3">
+                <v-select
+                  v-model="editingEmployee.workTypeId"
+                  :items="workTypes"
+                  item-title="name"
+                  item-value="id"
+                  label="Work Type"
+                ></v-select>
+              </v-col>
+
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="editingEmployee.directDate"
+                  label="Direct Date"
+                  type="date"
+                ></v-text-field>
+              </v-col>
+
+           
+        
+
+              <v-col cols="12 mb-5" sm="6" md="3">
+                <v-file-input
+                  label="Image"
+                  accept="image/*"
+                  @change="getEditFile($event , 'image512')"
+                ></v-file-input>
+              </v-col>
+
+              <v-col cols="12 mb-5" sm="6" md="3">
+                <v-file-input
+                  label="Avatar"
+                  accept="image/*"
+                  @change="getEditFile($event , 'avatar512')"
+                ></v-file-input>
+              </v-col>
+
+          
+
+    
+              <!-- is Manager -->
+              <v-col cols="12" sm="6" md="3">
+                <v-checkbox
+                  v-model="editingEmployee.isManager"
+                  label="Is Manager"
+                  required
+                ></v-checkbox>
+              </v-col>
+            </v-row>
+           
+          </v-container>
+  
       </v-card-text>
       <v-card-actions>
         <v-btn text @click="showEditInfoDialog = false">Cancel</v-btn>
@@ -907,7 +1139,6 @@ const fetchDepartments = async () => {
               {{ employeeDetails?.odooEmployeeId || "-" }}
             </p>
             <p><strong>Gender:</strong> {{ employeeDetails?.gender || "-" }}</p>
-            <!-- brithday -->
             <p>
               <strong>Brithday:</strong>
               {{
@@ -962,7 +1193,6 @@ const fetchDepartments = async () => {
     </v-card>
   </v-dialog>
 
-  <!-- Edit Password Modal -->
   <v-dialog v-model="showEditDialog" max-width="500px">
     <v-card>
       <!-- messages -->
