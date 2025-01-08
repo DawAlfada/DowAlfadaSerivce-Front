@@ -121,12 +121,13 @@ const updateInfo = async () => {
 
     const data = await response.json().catch(() => null);
     if (response.ok) {
-      successMessage.value = "Role updated successfully";
+      successMessage.value = "Updated successfully";
+      fetchEmployees();
     } else {
-      throw new Error(data?.error || "Failed to update role");
+      throw new Error(data?.error || "Failed to update");
     }
   } catch (error) {
-    errorMessage.value = error.message || "Failed to update role";
+    errorMessage.value = error.message || "Failed to update";
   } finally {
     showEditInfoDialog.value = false;
     loading.value = false;

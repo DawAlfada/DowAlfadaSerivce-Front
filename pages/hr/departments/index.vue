@@ -27,12 +27,13 @@ const successMessage = ref(null);
 
 const currentPage = ref(1);
 const pageSize = ref(10);
-const totalPages = computed(() => Math.ceil(totalCount.value / pageSize.value));
+const totalPages = computed(() => Math.ceil(departmentTotalCount.value / pageSize.value));
 
 const departmentName = ref("");
 const departmentId = ref("");
 
-watch(currentPage, () => {
+watch(currentPage, (newPage) => {
+  console.log("Current Page changed to:", newPage);
   fetchDepartments();
 });
 
@@ -308,49 +309,54 @@ const sendEmail = async () => {
           ></v-progress-circular>
 
           <div class="department-cards">
-            <v-card
-              v-for="item in filteredDepartments"
-              :key="item.id"
-              class="department-card"
-              :style="{ borderColor: '#' + item.departmentColor || '#ccc' }"
-            >
-              <v-card-text>
-                <div class="d-flex align-center">
-                  <div class="department-info">
-                    <h3 class="mb-2">{{ item.name }}</h3>
-                    <p class="mb-1">
-                      <strong>Display Name:</strong>
-                      {{ item.displayName == "False" ? "-" : item.displayName }}
-                    </p>
-                    <p class="mb-1">
-                      <strong>Manager:</strong>
-                      {{
-                        item.managerEmployee == null
-                          ? "-"
-                          : item.managerEmployee.name
-                      }}
-                    </p>
-                    <p class="mb-0">
-                      <strong>Created At:</strong>
-                      {{ item.createdAt.toString().split("T")[0] }}
-                    </p>
-                  </div>
-                </div>
-              </v-card-text>
-              <v-card-actions class="justify-center">
-                <v-btn color="primary" @click="openEmailDialog(item)">
-                  Send bulk email
-                </v-btn>
-              </v-card-actions>
-            </v-card>
-          </div>
+  <v-card
+    v-for="item in filteredDepartments"
+    :key="item.id"
+    class="department-card"
+    :style="{ borderColor: '#' + (item.departmentColor || 'ccc') }"
+    elevation="3"
+  >
+    <v-card-text>
+      <div class="card-header">
+        <h3 class="department-title">
+          {{ item.name }}
+        </h3>
+        <span class="department-id">
+          ID: {{ item.oodoDepartmentId }}
+        </span>
+      </div>
+      <div class="card-body">
+        <p class="department-detail">
+          <strong>Display Name:</strong>
+          {{ item.displayName === "False" ? "-" : item.name }}
+        </p>
+        <p class="department-detail">
+          <strong>Manager:</strong>
+          {{ item.managerEmployee ? item.managerEmployee.name : "-" }}
+        </p>
+        <p class="department-detail">
+          <strong>Created At:</strong>
+          {{ item.createdAt.toString().split("T")[0] }}
+        </p>
+      </div>
+    </v-card-text>
+    <v-card-actions class="card-footer">
+      <v-btn
+        color="primary"
+        class="action-button"
+        @click="openEmailDialog(item)"
+      >
+        Send Bulk Email
+      </v-btn>
+    </v-card-actions>
+  </v-card>
+</div>
 
           <v-pagination
-            v-model="currentPage"
-            :length="totalPages"
-            @input="fetchdepartments"
-            class="mt-4"
-          ></v-pagination>
+  v-model="currentPage"
+  :length="totalPages"
+  class="mt-4"
+></v-pagination>
         </v-container>
       </UiParentCard>
     </v-col>
