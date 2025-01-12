@@ -57,7 +57,6 @@ const newVacationType = ref({
   leaveDaysInYear: null,
   hoursPerMonth: null,
   isActive: true,
-  
 });
 const isEditing = ref(false);
 const editingVacationTypeId = ref(null);
@@ -107,16 +106,15 @@ const submitVacationType = async () => {
 
   if (
     newVacationType.value.leaveBased === 0 &&
-    !newVacationType.value.isDependVacationBalance
+    newVacationType.value.isDependVacationBalance === true
   ) {
     if (!newVacationType.value.leaveDaysInYear) {
       errorMessage.value = "Please fill in Leave Days In Year field";
       return;
     }
-
     if (
-      (!newVacationType.value.workTypeIds ||
-        newVacationType.value.workTypeIds.length === 0)
+      !newVacationType.value.workTypeIds ||
+      newVacationType.value.workTypeIds.length === 0
     ) {
       errorMessage.value = "Please select at least one Work Type";
       return;
@@ -319,14 +317,14 @@ onMounted(() => {
                 ></v-select>
               </v-col>
               <v-col
-              
                 cols="12"
                 sm="6"
                 md="3"
                 v-if="
                   (newVacationType.workTypeIds == null ||
                     newVacationType.workTypeIds.length == 0) &
-                  (newVacationType.leaveBased == 0 & newVacationType.isDependVacationBalance == false)
+                  ((newVacationType.leaveBased == 0) &
+                    (newVacationType.isDependVacationBalance == false))
                 "
               >
                 <v-text-field
@@ -341,7 +339,10 @@ onMounted(() => {
                 cols="12"
                 sm="6"
                 md="3"
-                v-if="newVacationType.leaveBased == 1 & newVacationType.isDependVacationBalance == false"
+                v-if="
+                  (newVacationType.leaveBased == 1) &
+                  (newVacationType.isDependVacationBalance == false)
+                "
               >
                 <v-text-field
                   type="number"
@@ -429,14 +430,10 @@ onMounted(() => {
                   <span v-else class="hour-based">Hour Based Leave</span>
                 </td>
                 <td>
-                  <span
-                    v-if="item.isDependVacationBalance"
-                    class="day-based"
+                  <span v-if="item.isDependVacationBalance" class="day-based"
                     >Depend Vacation Balance</span
                   >
-                  <span
-                    v-else
-                    class="hour-based"
+                  <span v-else class="hour-based"
                     >Not Depend Vacation Balance</span
                   >
                 </td>
@@ -490,23 +487,24 @@ onMounted(() => {
             >
               <v-list-item-content>
                 <v-list-item-title
-                  >{{ item.workType.name }} 
-                  <v-chip v-if="item.workType.workDaysInWeek"
+                  >{{ item.workType.name }}
+                  <v-chip
+                    v-if="item.workType.workDaysInWeek"
                     append-icon="mdi-checkbox-marked-circle"
                     class="ma-2"
                     color="primary"
                   >
-                  -  Work days in week ( {{ item.workType.workDaysInWeek }} )
+                    - Work days in week ( {{ item.workType.workDaysInWeek }} )
                   </v-chip>
-               
-                  <v-chip v-if="item.workType.leaveDaysInYear"
+
+                  <v-chip
+                    v-if="item.workType.leaveDaysInYear"
                     append-icon="mdi-checkbox-marked-circle"
                     class="ma-2"
                     color="primary"
                   >
-                  - Leave days in year( {{ item.workType.leaveDaysInYear }} )
+                    - Leave days in year( {{ item.workType.leaveDaysInYear }} )
                   </v-chip>
-                
                 </v-list-item-title>
               </v-list-item-content>
             </v-list-item>
