@@ -106,7 +106,7 @@ const submitVacationType = async () => {
 
   if (
     newVacationType.value.leaveBased === 0 &&
-    newVacationType.value.isDependVacationBalance === true
+    newVacationType.value.isDependVacationBalance === false 
   ) {
     if (!newVacationType.value.leaveDaysInYear) {
       errorMessage.value = "Please fill in Leave Days In Year field";
@@ -473,7 +473,7 @@ onMounted(() => {
     </v-col>
   </v-row>
   <!--  worktype dialog -->
-  <v-dialog v-model="workTypeDialog" max-width="600">
+  <v-dialog v-model="workTypeDialog" max-width="700">
     <v-card>
       <v-card-title class="headline"> </v-card-title>
       <v-card-text>
