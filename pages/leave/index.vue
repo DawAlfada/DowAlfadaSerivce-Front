@@ -126,7 +126,6 @@ const fetchVacationType = async () => {
     const data = await response.json();
     if (!data.error) {
       VacationType.value = data.data.items;
-      totalCount.value = data.data.totalCount;
     }
   } catch (error) {
     errorMessage.value = "Failed to fetch VacationType";
