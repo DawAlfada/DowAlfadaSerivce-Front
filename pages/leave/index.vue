@@ -56,12 +56,11 @@ const searchTerm = ref("");
 const searchByInfo = ref({
   employeeLeavestatus: "",
   EmployeeName: "",
-  VacationTypeName : "",
-  StartDate : "",
-  EndDate : "",
-  Status : "",
-  LeaveBased : "",
-
+  VacationTypeName: "",
+  StartDate: "",
+  EndDate: "",
+  Status: "",
+  LeaveBased: "",
 });
 
 watch(
@@ -336,6 +335,37 @@ const submitEmployeeLeave = async () => {
     errorMessage.value = "Please select a Vacation Type";
     return;
   }
+ 
+  console.log(
+      new Date(newEmployeeLeave.value.endDate) -
+        new Date(newEmployeeLeave.value.startDate));
+
+  console.log(leaveTypeInfo.value.totalDays);   
+  console.log(newEmployeeLeave.value.endDate);   
+  console.log(newEmployeeLeave.value.startDate);   
+
+  if (leaveTypeInfo.value.leaveBased == 0) {
+    if (
+      leaveTypeInfo.value.totalDays < calculateDaysDifference(
+        newEmployeeLeave.value.startDate,
+        newEmployeeLeave.value.endDate
+      )) {
+      errorMessage.value = "You don't have enough days for this leave";
+      return;
+    }
+  } 
+  else {
+    if (
+      leaveTypeInfo.totalHours <
+      calculateHoursDifference(
+        newEmployeeLeave.value.startTime,
+        newEmployeeLeave.value.endTime
+      )
+    ) {
+      errorMessage.value = "You don't have enough hours for this leave";
+      return;
+    }
+  }
 
   if (newEmployeeLeave.value.endDate && newEmployeeLeave.value.startDate) {
     if (
@@ -427,6 +457,23 @@ const submitEmployeeLeave = async () => {
   }
 };
 
+const calculateDaysDifference = (startDate, endDate) => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+    start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+  return Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
+};
+
+const calculateHoursDifference = (startTime, endTime) => {
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+  
+  return Math.abs(end - start) / (1000 * 60 * 60);
+};
+
+
+
 const confirmDeleteLeave = (Leave) => {
   LeaveToDelete.value = Leave;
   deleteDialog.value = true;
@@ -506,7 +553,7 @@ onMounted(() => {
         </div>
 
         <div v-if="leaveTypeIsError == true">
-          <v-alert title="Attention" type="error" class="m-5" >
+          <v-alert title="Attention" type="error" class="m-5">
             <div>This type of leave is not available for you.</div>
           </v-alert>
         </div>
@@ -632,7 +679,16 @@ onMounted(() => {
               ></v-select>
             </v-col>
 
-            <v-col cols="12" sm="6" md="4"  v-if="userStore.user.role == 1 || userStore.user.role == 4 || userStore.user.role == 5" >
+            <v-col
+              cols="12"
+              sm="6"
+              md="4"
+              v-if="
+                userStore.user.role == 1 ||
+                userStore.user.role == 4 ||
+                userStore.user.role == 5
+              "
+            >
               <v-text-field
                 v-model="searchByInfo.EmployeeName"
                 label="Employee Name"
@@ -646,7 +702,6 @@ onMounted(() => {
                 label="Vacation Type"
                 @input="fetchEmployeeLeaves"
               ></v-text-field>
-
             </v-col>
 
             <v-col cols="12" sm="6" md="4">
@@ -665,7 +720,6 @@ onMounted(() => {
                 type="date"
                 @input="fetchEmployeeLeaves"
               ></v-text-field>
-
             </v-col>
 
             <v-col cols="12" sm="6" md="4">
@@ -677,28 +731,22 @@ onMounted(() => {
                 label="Status"
                 @input="fetchEmployeeLeaves"
               ></v-select>
-
             </v-col>
 
             <v-col cols="12" sm="6" md="4">
               <v-select
                 v-model="searchByInfo.LeaveBased"
                 :items="[
-                   { text: 'All', value: '' },
+                  { text: 'All', value: '' },
                   { text: 'Day Leave Based', value: 0 },
-                 { text: 'Hour Leave Based', value: 1 } 
-                 
-
+                  { text: 'Hour Leave Based', value: 1 },
                 ]"
                 item-title="text"
                 item-value="value"
                 label="Leave Based"
                 @input="fetchEmployeeLeaves"
               ></v-select>
-
-
             </v-col>
-
           </v-row>
 
           <v-table density="compact">
@@ -797,9 +845,7 @@ onMounted(() => {
                 </td>
 
                 <td>{{ formatDate(Leave.createdAt) }}</td>
-                <td
-               
-                >
+                <td>
                   <v-btn
                     v-if="Leave.status == 0 || Leave.status == 3"
                     icon="mdi-pencil"

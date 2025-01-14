@@ -252,7 +252,7 @@ onMounted(() => {
             <td>{{ item.name }}</td>
             <td>{{ item.workDaysInWeek }}</td>
             <td>{{ item.leaveDaysInYear }}</td>
-            <td>{{ item.monthlyIncrease }}</td>
+            <td>{{  parseFloat(item.monthlyIncrease).toFixed(1) }}</td>
             <td>{{ item.createdAt.toString().split("T")[0] }}</td>
             <td>
               <v-btn

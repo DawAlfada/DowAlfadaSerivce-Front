@@ -112,13 +112,7 @@ const submitVacationType = async () => {
       errorMessage.value = "Please fill in Leave Days In Year field";
       return;
     }
-    if (
-      !newVacationType.value.workTypeIds ||
-      newVacationType.value.workTypeIds.length === 0
-    ) {
-      errorMessage.value = "Please select at least one Work Type";
-      return;
-    }
+  
   }
 
   if (
@@ -321,8 +315,7 @@ onMounted(() => {
                 sm="6"
                 md="3"
                 v-if="
-                  (newVacationType.workTypeIds == null ||
-                    newVacationType.workTypeIds.length == 0) &
+                
                   ((newVacationType.leaveBased == 0) &
                     (newVacationType.isDependVacationBalance == false))
                 "
@@ -404,6 +397,7 @@ onMounted(() => {
                     v-if="
                       item.vacationTypeWorkTypes &&
                       item.vacationTypeWorkTypes.length > 0 &&
+                      item.isDependVacationBalance === true &&
                       item.leaveBased === 0
                     "
                     @click="showWorkTypes(item.vacationTypeWorkTypes)"
@@ -411,12 +405,22 @@ onMounted(() => {
                   >
                     Depends on the type of work
                   </span>
-                  <span v-else-if="item.leaveBased === 0"
-                    >{{ item.leaveDaysInYear }} Day</span
+                  <span v-else-if="item.leaveBased === 0">
+                    <span
+                    v-if="
+                      item.vacationTypeWorkTypes &&
+                      item.vacationTypeWorkTypes.length > 0 "
+                    @click="showWorkTypes(item.vacationTypeWorkTypes)"
+                    class="clickable-text"
                   >
+                  Work Types - 
+                  </span>
+                    
+                    {{ item.leaveDaysInYear }} Day </span>
                   <span v-else>-</span>
                 </td>
                 <td>
+                
                   <span
                     v-if="item.hoursPerMonth === null && item.leaveBased === 0"
                     >-</span
