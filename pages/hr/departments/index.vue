@@ -45,14 +45,22 @@ const departmentSearchInfo = ref({
 const newDepartment = ref({
   oodoDepartmentId: "",
   displayName: "",
+  parentId : "",
   name: "",
+  isMaster: false,
 });
 
 onMounted(() => {
   fetchDepartments();
+  fetchAllDepartments();
 });
 
 const departments = ref([]);
+const allDepartments = ref([]);
+
+
+
+
 const fetchDepartments = async () => {
   try {
     const response = await fetch(
@@ -74,6 +82,27 @@ const fetchDepartments = async () => {
   }
 };
 
+const fetchAllDepartments = async () => {
+  try {
+    const response = await fetch(
+      `${config.public.apiUrl}/Department?Page=1&PageSize=100`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userStore.token}`, // Use the token from the store
+        },
+      }
+    );
+    const data = await response.json();
+    if (!data.error) {
+      allDepartments.value = data.data.items;
+    }
+  } catch (error) {
+    errorMessage.value = "Failed to fetch Departments";
+  }
+};
+
+
 const filteredDepartments = computed(() => {
   return departments.value.filter((department) =>
     department.name
@@ -84,10 +113,17 @@ const filteredDepartments = computed(() => {
 
 // Modal states
 const showEmailDialog = ref(false);
+const showEditDialog = ref(false);
 const emailTitle = ref("");
 const emailMessage = ref("");
 const departmentTotalCount = ref(0);
-
+const departmentInfo = ref({
+  parentId : "",
+  oodoDepartmentId: "",
+  displayName: "",
+  name: "",
+  isMaster: false,
+});
 
 const submitDepartment = async () => {
   loading.value = true;
@@ -124,10 +160,51 @@ const submitDepartment = async () => {
   }
 };
 
+const editDepartment = async () => {
+  loading.value = true;
+  errorMessage.value = null;
+  successMessage.value = null;
+
+  try {
+    const response = await fetch(`${config.public.apiUrl}/Department/${departmentInfo.value.oodoDepartmentId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userStore.token}`,
+      },
+      body: JSON.stringify(departmentInfo.value),
+    });
+
+    const data = await response.json().catch(() => null);
+    if (response.ok) {
+      successMessage.value = "Department edited successfully";
+      fetchDepartments();
+      // close 
+      showEditDialog.value = false;
+      
+   
+    } else {
+      throw new Error(data?.error || "Failed to create Department");
+    }
+  } catch (error) {
+    errorMessage.value = error.message || "Failed to create Department";
+  } finally {
+    loading.value = false;
+  }
+};
+
+
 const openEmailDialog = async (department) => {
   showEmailDialog.value = true;
   departmentName.value = department.name;
   departmentId.value = department.id;
+};
+
+const openEditDialog = async (department) => {
+  showEditDialog.value = true;
+  console.log(department);
+  departmentInfo.value = department;
+ 
 };
 
 const syncdepartments = async () => {
@@ -229,6 +306,7 @@ const sendEmail = async () => {
                   v-model="newDepartment.oodoDepartmentId"
                   label="Odoo Department ID"
                   required
+                  type="number"
                 ></v-text-field>
               </v-col>
               <v-col cols="12" sm="6" md="3">
@@ -245,13 +323,33 @@ const sendEmail = async () => {
                   required
                 ></v-text-field>
               </v-col>
-              <!-- <v-col cols="12" sm="6" md="3">
-                <v-text-field
-                  v-model="newDepartment.managerId"
-                  label="Manager ID"
+
+              <v-col cols="12" sm="6" md="3">
+                <v-checkbox
+                  v-model="newDepartment.isMaster"
+                  label="Is Master"
                   required
-                ></v-text-field>
-              </v-col> -->
+                ></v-checkbox>
+              </v-col>
+        
+              <v-col cols="12" sm="6" md="3" v-if="!newDepartment.isMaster">
+                <v-select
+                  v-model="newDepartment.parentId"
+                  :items="allDepartments"
+                  item-title="name"
+                  item-value="oodoDepartmentId"
+                  label="Parent Department"
+                  clearable
+                >
+                  <template v-slot:item="{ props, item }">
+                    <v-list-item
+                      v-bind="props"
+                      :subtitle="item.raw.displayName"
+                    ></v-list-item>
+                  </template>
+                </v-select>
+              </v-col>
+
             </v-row>
 
             <v-row class="mt-4">
@@ -331,6 +429,10 @@ const sendEmail = async () => {
           {{ item.displayName === "False" ? "-" : item.name }}
         </p>
         <p class="department-detail">
+          <strong>Parent Department:</strong>
+          {{ item.parent === null ? "-" : item.parent.displayName }}
+        </p>
+        <p class="department-detail">
           <strong>Manager:</strong>
           {{ item.managerEmployee ? item.managerEmployee.name : "-" }}
         </p>
@@ -348,6 +450,13 @@ const sendEmail = async () => {
       >
         Send Bulk Email
       </v-btn>
+      <v-btn
+        color="primary"
+        class="action-button"
+        @click="openEditDialog(item)"
+      >
+      Edit
+       </v-btn>
     </v-card-actions>
   </v-card>
 </div>
@@ -361,6 +470,78 @@ const sendEmail = async () => {
       </UiParentCard>
     </v-col>
   </v-row>
+
+  <v-dialog v-model="showEditDialog" max-width="500px">
+    <v-card>
+      <v-card-title
+        >Edit { {{ departmentInfo.name }} } Department 
+      </v-card-title>
+      <v-card-text>
+        <div>
+            <v-row>
+              <v-col cols="12" sm="12" md="12">
+                <v-text-field
+                  v-model="departmentInfo.oodoDepartmentId"
+                  label="Odoo Department ID"
+                  required
+                  disabled
+                  type="number"
+                ></v-text-field>
+              </v-col>
+              <v-col cols="12" sm="12" md="12">
+                <v-text-field
+                  v-model="departmentInfo.displayName"
+                  label="Display Name"
+                  required
+                ></v-text-field>
+              </v-col>
+              <v-col cols="12" sm="12" md="12">
+                <v-text-field
+                  v-model="departmentInfo.name"
+                  label="Department Name"
+                  required
+                ></v-text-field>
+              </v-col>
+              <v-col cols="12" sm="6" md="3">
+                <v-checkbox
+                  v-model="departmentInfo.isMaster"
+                  label="Is Master"
+                  required
+                ></v-checkbox>
+              </v-col>
+        
+              <v-col cols="12" sm="12" md="12"  v-if="!departmentInfo.isMaster">
+                <v-select
+                  v-model="departmentInfo.parentId"
+                  :items="allDepartments"
+                  item-title="name"
+                  item-value="oodoDepartmentId"
+                  label="Parent Department"
+                  clearable
+
+                >
+                  <template v-slot:item="{ props, item }">
+                    <v-list-item
+                      v-bind="props"
+                      :subtitle="item.raw.displayName"
+                    ></v-list-item>
+                  </template>
+                </v-select>
+              </v-col>
+
+            </v-row>
+       
+        </div>
+      
+      </v-card-text>
+      <v-card-actions>
+        <v-btn text @click="showEditDialog = false">Cancel</v-btn>
+        <v-btn :loading="loading" color="primary" @click="editDepartment"
+          >Edit</v-btn
+        >
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 
   <!-- Send Email Modal -->
   <v-dialog v-model="showEmailDialog" max-width="500px">

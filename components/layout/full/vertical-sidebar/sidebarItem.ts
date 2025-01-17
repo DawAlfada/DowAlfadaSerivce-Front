@@ -120,7 +120,7 @@ const sidebarItem: menu[] = [
         roles: [1, 2, 3, 4, 5, 6,7]
     },
     { header: 'Hr' , 
-        roles: [1, 4, 5]
+        roles: [1, 2, 3, 4, 5, 6,7]
     },
     {
         title: 'Employees', 
@@ -133,6 +133,12 @@ const sidebarItem: menu[] = [
         icon: SectionIcon,
         to: '/hr/departments',
         roles: [1, 4, 5]
+    },
+    {
+        title: 'Departments Tree',
+        icon: SectionIcon,
+        to: '/hr/departments/departmentTree',
+        roles: [1, 2, 3, 4, 5, 6,7]
     },
     {
         title: 'WorkType',
