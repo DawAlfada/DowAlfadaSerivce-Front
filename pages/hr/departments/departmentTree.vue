@@ -1,7 +1,10 @@
+# Template section
 <template>
-  <div class="tree-chart">
+  <v-row>
+    <v-col cols="12" md="12">
+      <div class="tree-chart">
     <div v-if="nodes.length" class="tree-container">
-      <!-- خطوط الاتصال مع تأثيرات حركية -->
+      <!-- Connection lines -->
       <div
         v-for="(connection, index) in connections"
         :key="`connection-${index}`"
@@ -14,7 +17,7 @@
         }"
       ></div>
       
-      <!-- العقد مع تصميم محسن -->
+      <!-- Nodes -->
       <div
         v-for="(node, index) in nodes"
         :key="`node-${index}`"
@@ -44,27 +47,22 @@
                 v-for="(employee, empIndex) in node.employees.slice(0, 4)" 
                 :key="`emp-${empIndex}`"
                 class="employee-item"
+                :title="employee.name"
               >
                 <div class="employee-avatar">
                   <img
-                      :src="
-                        employee.image512
-                          ? `data:image/svg+xml;base64,${employee.image512}`
-                          : 'fallback-image-url.jpg'
-                      "
-                      @error="handleImageError($event, employee.image512)"
-                      width="35"
-                      height="35"
-                      alt="user"
-                      class="avatar"
-                    />
+                    :src="employee.image512 ? `data:image/svg+xml;base64,${employee.image512}` : 'fallback-image-url.jpg'"
+                    @error="handleImageError($event, employee.image512)"
+                    alt="user"
+                    class="avatar"
+                  />
                 </div>
-                <span class="employee-name">{{ employee.name }}</span>
+                <span class="employee-name" :title="employee.name">{{ employee.name }}</span>
               </div>
             </div>
             
             <div v-if="node.employees.length > 4" class="more-employees">
-              +{{ node.employees.length - 4 }} آخرين
+              +{{ node.employees.length - 4 }} more
             </div>
           </div>
         </div>
@@ -72,9 +70,14 @@
     </div>
     <div v-else class="loading-state">
       <div class="loading-spinner"></div>
-      <p>جاري تحميل بيانات الهيكل التنظيمي...</p>
+      <p>loading ...</p>
     </div>
   </div>
+      </v-col>
+      </v-row>
+
+
+
 </template>
 
 <script setup>
@@ -89,8 +92,12 @@ const nodes = ref([]);
 const connections = ref([]);
 const hoveredNode = ref(null);
 
-const chartWidth = 1200; // زيادة العرض للتناسب مع التصميم الجديد
-const chartHeight = 800; // زيادة الارتفاع للتناسب مع التصميم الجديد
+const chartWidth = 3000;
+const chartHeight = 1500;
+
+const LEVEL_HEIGHT = 220;  // Increased vertical spacing
+const MIN_NODE_SPACING = 350;  // Increased horizontal spacing
+const ROOT_Y = 100;
 
 const hasChildren = (node) => {
   return node.children && node.children.length > 0;
@@ -100,10 +107,10 @@ const handleNodeHover = (node, isHovered) => {
   hoveredNode.value = isHovered ? node : null;
 };
 
-
 const handleImageError = (event, fallbackImage) => {
   event.target.src = `data:image/jpeg;base64,${fallbackImage}`;
 };
+
 const fetchTree = async () => {
   try {
     const response = await fetch(
@@ -118,33 +125,47 @@ const fetchTree = async () => {
 
     const data = await response.json();
     if (!data.error) {
+      nodes.value = [];
+      connections.value = [];
       const treeData = data.data;
-      calculateTree(treeData, chartWidth / 2, 80); // تعديل نقطة البداية
+      calculateNodeWidths(treeData);
+      // Center the root node
+      calculateTree(treeData, chartWidth / 2, ROOT_Y);
     }
   } catch (error) {
     console.error("Failed to fetch departments:", error);
   }
 };
 
-const calculateTree = (node, x, y, level = 0, spacing = 400) => {
+const calculateNodeWidths = (node) => {
+  if (!node.children || node.children.length === 0) {
+    node._width = MIN_NODE_SPACING;
+    return MIN_NODE_SPACING;
+  }
+
+  let totalWidth = 0;
+  node.children.forEach(child => {
+    totalWidth += calculateNodeWidths(child);
+  });
+
+  node._width = Math.max(totalWidth, MIN_NODE_SPACING);
+  return node._width;
+};
+
+const calculateTree = (node, x, y, level = 0) => {
   nodes.value.push({
-    name: node.name,
-    displayName: node.displayName,
-    employees: node.employees || [],
-    children: node.children || [],
+    ...node,
     x,
     y
   });
 
   if (node.children && node.children.length > 0) {
-    const childSpacing = Math.min(spacing, 600 / node.children.length);
-    let currentX = x - (childSpacing * (node.children.length - 1)) / 2;
+    let currentX = x - (node._width / 2) + (node.children[0]._width / 2);
 
-    node.children.forEach((child) => {
+    node.children.forEach((child, index) => {
       const childX = currentX;
-      const childY = y + 180; // زيادة المسافة الرأسية بين المستويات
+      const childY = y + LEVEL_HEIGHT;
 
-      // حساب خط الاتصال
       const dx = childX - x;
       const dy = childY - y;
       const distance = Math.sqrt(dx * dx + dy * dy);
@@ -157,8 +178,8 @@ const calculateTree = (node, x, y, level = 0, spacing = 400) => {
         angle,
       });
 
-      calculateTree(child, childX, childY, level + 1, childSpacing);
-      currentX += childSpacing;
+      calculateTree(child, childX, childY, level + 1);
+      currentX += child._width;
     });
   }
 };
@@ -169,37 +190,31 @@ onMounted(fetchTree);
 <style scoped>
 .tree-chart {
   position: relative;
-  width: 100%;
-  min-height: 800px;
   overflow: auto;
   padding: 40px;
-  box-sizing: border-box;
+  background: #f8f9fa;
 }
 
 .tree-container {
   position: relative;
-  width: 1200px;
-  min-height: 800px;
+  width: 3000px;  /* Increased width */
+  height: 1500px;  /* Increased height */
   margin: 0 auto;
 }
 
 .node {
   position: absolute;
-  width: 280px;
+  width: 300px;  /* Increased width */
   transform: translate(-50%, -50%);
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
-}
-
-.node:hover {
-  transform: translate(-50%, -50%) scale(1.02);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  z-index: 2;
 }
 
 .node-content {
-  padding: 16px;
+  padding: 20px;  /* Increased padding */
 }
 
 .node-header {
@@ -241,7 +256,7 @@ onMounted(fetchTree);
 .employees-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  gap: 12px;  /* Increased gap */
   margin-top: 12px;
 }
 
@@ -249,19 +264,21 @@ onMounted(fetchTree);
   display: flex;
   align-items: center;
   padding: 4px;
+  max-width: 100%;  /* Ensure container doesn't overflow */
 }
 
 .employee-avatar {
+  min-width: 32px;  /* Fixed width */
   width: 32px;
   height: 32px;
-  margin-right: 8px;
+  margin-left: 8px;  /* RTL support */
   border-radius: 50%;
   overflow: hidden;
   border: 2px solid #fff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.employee-avatar img {
+.avatar {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -273,13 +290,15 @@ onMounted(fetchTree);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 80px;  /* Limit text width */
 }
 
 .more-employees {
   text-align: center;
   color: #6c757d;
   font-size: 12px;
-  margin-top: 8px;
+  margin-top: 12px;
+
 }
 
 .line {
@@ -287,7 +306,7 @@ onMounted(fetchTree);
   height: 2px;
   background: linear-gradient(to right, #dee2e6, #adb5bd);
   transform-origin: left center;
-  z-index: 0;
+  z-index: 1;
 }
 
 .loading-state {
@@ -295,7 +314,8 @@ onMounted(fetchTree);
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 400px;
+  height: 100%;
+ 
 }
 
 .loading-spinner {
@@ -313,15 +333,14 @@ onMounted(fetchTree);
   100% { transform: rotate(360deg); }
 }
 
-/* توافق مع الشاشات الصغيرة */
+/* Responsive support */
 @media (max-width: 1280px) {
-  .tree-container {
-    width: 100%;
-    overflow-x: auto;
+  .node {
+    width: 280px;
   }
   
-  .node {
-    width: 240px;
+  .employee-name {
+    max-width: 70px;
   }
 }
 </style>
