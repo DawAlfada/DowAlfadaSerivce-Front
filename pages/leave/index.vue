@@ -33,23 +33,85 @@ watch([errorMessage, successMessage], () => {
   }
 });
 
+const employeeLeavestatus = [
+  { text: "Pending", value: 0 },
+  { text: "Approved", value: 1 },
+  { text: "Rejected", value: 2 },
+  { text: "Approved With Changes", value: 3 },
+  { text: "Approved With Deduction", value: 4 },
+];
+
+const hrStatus = [
+  { text: "Pending", value: 0 },
+  { text: "Approved", value: 1 },
+  { text: "Rejected", value: 2 },
+];
+
+const complaintStatus = [
+  {
+    text: "Pending",
+    value: 0,
+    backgroundColor: "#E3FCEF",
+    borderColor: "#B3EBC9",
+    textColor: "#007B55",
+  },
+  {
+    text: "Approved",
+    value: 1,
+    backgroundColor: "#F2F2F7",
+    borderColor: "#D1D1E0",
+    textColor: "#505464",
+  },
+  {
+    text: "Rejected",
+    value: 3,
+    backgroundColor: "#FFE6E6",
+    borderColor: "#FFB3B3",
+    textColor: "#B00020",
+  },
+  {
+    text: "Approved With Changes",
+    value: 4,
+    backgroundColor: "#FFF8E1",
+    borderColor: "#FFECB3",
+    textColor: "#FF8F00",
+  },
+  {
+    text: "Approved With Deduction",
+    value: 5,
+    backgroundColor: "#FFEBEE",
+    borderColor: "#FFB3D1",
+    textColor: "#FF2D55",
+  },
+];
+
 const statusChangeInfo = ref({
   employeeLeavestatus: "",
   managerDescription: "",
+  hrStatus: "",
+  hrDescription: "",
   id: null,
+  isManager: true,
 });
 
 const LeaveInfo = ref({
   employeeLeavestatus: "",
   managerDescription: "",
-
+  hrStatus: "",
+  hrDescription: "",
   id: null,
 });
 
 const openDialogStatus = (info) => {
   dialogStatus.value = true;
-  statusChangeInfo.value.employeeLeavestatus = info.status;
-  statusChangeInfo.value.id = info.id;
+  statusChangeInfo.value = {
+    employeeLeavestatus: info.status,
+    hrStatus: info.hrStatus,
+    managerDescription: "",
+    hrDescription: "",
+    id: info.id,
+    isManager: userStore.user.role === 3 // true for Manager (3), false for HR (5)
+  };
 };
 const searchTerm = ref("");
 
@@ -85,6 +147,15 @@ const editingLeaveId = ref(null);
 
 const deleteDialog = ref(false);
 const LeaveToDelete = ref(null);
+
+const showStatusDetailsDialog = ref(false);
+const statusDetails = ref({
+  managerStatus: null,
+  hrStatus: null,
+  managerDescription: null,
+  hrDescription: null,
+  leave: null
+});
 
 const fetchEmployeeLeaves = async () => {
   loading.value = true;
@@ -152,26 +223,47 @@ const downloadAttachment = (url) => {
 };
 
 const changeEmployeeLeavestatus = async () => {
-  if (
-    statusChangeInfo.value.employeeLeavestatus === "" ||
-    statusChangeInfo.value.employeeLeavestatus ===
-      LeaveInfo.value.employeeLeavestatus
-  ) {
-    errorMessage.value = "Please select a different status";
-    return;
-  }
-
-  if (!statusChangeInfo.value.managerDescription) {
-    errorMessage.value = "Please provide a manager description";
-    return;
+  if (statusChangeInfo.value.isManager) {
+    if (statusChangeInfo.value.employeeLeavestatus === "" || 
+        statusChangeInfo.value.employeeLeavestatus === LeaveInfo.value.employeeLeavestatus) {
+      errorMessage.value = "Please select a different status";
+      return;
+    }
+    if (!statusChangeInfo.value.managerDescription) {
+      errorMessage.value = "Please provide a manager description";
+      return;
+    }
+  } else {
+    if (statusChangeInfo.value.hrStatus === "" || 
+        statusChangeInfo.value.hrStatus === LeaveInfo.value.hrStatus) {
+      errorMessage.value = "Please select a different status";
+      return;
+    }
+    if (!statusChangeInfo.value.hrDescription) {
+      errorMessage.value = "Please provide an HR description";
+      return;
+    }
   }
 
   errorMessage.value = "";
   successMessage.value = "";
   loading.value = true;
   try {
+    const params = new URLSearchParams();
+    params.append('id', statusChangeInfo.value.id);
+    params.append('status', statusChangeInfo.value.employeeLeavestatus);
+    
+    // Only append hrStatus if it's not a manager request
+    if (!statusChangeInfo.value.isManager) {
+      params.append('hrStatus', statusChangeInfo.value.hrStatus);
+    }
+    
+    params.append('managerDescription', statusChangeInfo.value.managerDescription || "");
+    params.append('hrDescription', statusChangeInfo.value.hrDescription || "");
+    params.append('isManager', statusChangeInfo.value.isManager);
+
     const response = await fetch(
-      `${config.public.apiUrl}/EmployeeLeave/UpdateStatus?id=${statusChangeInfo.value.id}&status=${statusChangeInfo.value.employeeLeavestatus}&managerDescription=${statusChangeInfo.value.managerDescription}`,
+      `${config.public.apiUrl}/EmployeeLeave/UpdateStatus?${params.toString()}`,
       {
         method: "PUT",
         headers: {
@@ -183,14 +275,14 @@ const changeEmployeeLeavestatus = async () => {
     if (!data.error) {
       successMessage.value = data.message;
       fetchEmployeeLeaves();
+      dialogStatus.value = false;
     } else {
-      throw new Error(data.message);
+      errorMessage.value = data.message;
     }
   } catch (error) {
     errorMessage.value = error.message || "Failed to change Leave status";
   } finally {
     loading.value = false;
-    dialogStatus.value = false;
   }
 };
 
@@ -206,52 +298,6 @@ const formatTime = (time) => {
   const adjustedHours = hours % 12 || 12; // Convert 0 to 12 for 12-hour format
   return `${adjustedHours}:${minutes} ${period}`;
 };
-
-const employeeLeavestatus = [
-  { text: "Pending", value: 0 },
-  { text: "Approved", value: 1 },
-  { text: "Rejected", value: 2 },
-  { text: "Approved With Changes", value: 3 },
-  { text: "Approved With Deduction", value: 4 },
-];
-
-const complaintStatus = [
-  {
-    text: "Pending",
-    value: 0,
-    backgroundColor: "#E3FCEF",
-    borderColor: "#B3EBC9",
-    textColor: "#007B55",
-  },
-  {
-    text: "Approved",
-    value: 1,
-    backgroundColor: "#F2F2F7",
-    borderColor: "#D1D1E0",
-    textColor: "#505464",
-  },
-  {
-    text: "Rejected",
-    value: 3,
-    backgroundColor: "#FFE6E6",
-    borderColor: "#FFB3B3",
-    textColor: "#B00020",
-  },
-  {
-    text: "Approved With Changes",
-    value: 4,
-    backgroundColor: "#FFF8E1",
-    borderColor: "#FFECB3",
-    textColor: "#FF8F00",
-  },
-  {
-    text: "Approved With Deduction",
-    value: 5,
-    backgroundColor: "#FFEBEE",
-    borderColor: "#FFB3D1",
-    textColor: "#FF2D55",
-  },
-];
 
 const getStatusStyle = (status) => {
   const statusObj = complaintStatus.find((s) => s.value === status);
@@ -520,6 +566,17 @@ const resetForm = () => {
   editingLeaveId.value = null;
 };
 
+const showStatusDetails = (leave) => {
+  statusDetails.value = {
+    managerStatus: leave.status,
+    hrStatus: leave.hrStatus,
+    managerDescription: leave.managerDescription,
+    hrDescription: leave.hrDescription,
+    leave: leave
+  };
+  showStatusDetailsDialog.value = true;
+};
+
 onMounted(() => {
   fetchEmployeeLeaves();
   fetchVacationType();
@@ -759,8 +816,6 @@ onMounted(() => {
                 <th class="text-left">From - To</th>
                 <th class="text-left">Status</th>
                 <th class="text-left">Attachment</th>
-                <th class="text-left">Manager Description</th>
-
                 <th class="text-left">created At</th>
                 <th class="text-left">Actions</th>
               </tr>
@@ -802,26 +857,14 @@ onMounted(() => {
                 </td>
 
                 <td>
-                  <span
-                    v-if="
-                      userStore.user.role == 1 ||
-                      userStore.user.role == 3 ||
-                      userStore.user.role == 4 ||
-                      userStore.user.role == 5
-                    "
-                    @click="openDialogStatus(Leave)"
-                    class="btn"
-                    :style="getStatusStyle(Leave.status)"
+                  <v-btn
+                    color="primary"
+                    variant="text"
+                    @click="showStatusDetails(Leave)"
                   >
-                    {{ getStatusText(Leave.status) }}
-                  </span>
-                  <span
-                    v-else
-                    class="btn"
-                    :style="getStatusStyle(Leave.status)"
-                  >
-                    {{ getStatusText(Leave.status) }}
-                  </span>
+                    <v-icon>mdi-information</v-icon>
+                    View Details
+                  </v-btn>
                 </td>
 
                 <td>
@@ -832,16 +875,6 @@ onMounted(() => {
                     >mdi-paperclip</v-icon
                   >
                   <v-icon v-else color="grey">mdi-paperclip</v-icon>
-                </td>
-
-                <td>
-                  <v-icon
-                    v-if="Leave.managerDescription"
-                    @click="showDes(Leave.managerDescription)"
-                    color="primary"
-                    >mdi-eye</v-icon
-                  >
-                  <span v-else>Not Available</span>
                 </td>
 
                 <td>{{ formatDate(Leave.createdAt) }}</td>
@@ -899,18 +932,36 @@ onMounted(() => {
   <!-- change status dialog -->
   <v-dialog v-model="dialogStatus" max-width="400">
     <v-card>
-      <v-card-title class="headline">Change Leave Status</v-card-title>
+      <v-card-title class="headline">
+        {{ statusChangeInfo.isManager ? 'Change Manager Status' : 'Change HR Status' }}
+      </v-card-title>
       <v-card-text>
         <v-select
+          v-if="statusChangeInfo.isManager"
           v-model="statusChangeInfo.employeeLeavestatus"
           :items="employeeLeavestatus"
           item-title="text"
           item-value="value"
-          label="Status"
+          label="Manager Status"
+        ></v-select>
+        <v-select
+          v-else
+          v-model="statusChangeInfo.hrStatus"
+          :items="hrStatus"
+          item-title="text"
+          item-value="value"
+          label="HR Status"
         ></v-select>
         <v-text-field
+          v-if="statusChangeInfo.isManager"
           v-model="statusChangeInfo.managerDescription"
           label="Manager Description"
+          required
+        ></v-text-field>
+        <v-text-field
+          v-else
+          v-model="statusChangeInfo.hrDescription"
+          label="HR Description"
           required
         ></v-text-field>
       </v-card-text>
@@ -944,6 +995,77 @@ onMounted(() => {
       <v-card-actions>
         <v-btn color="primary" text @click="deleteDialog = false">Cancel</v-btn>
         <v-btn color="red" text @click="deleteLeave">Delete</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <!-- Status Details Dialog -->
+  <v-dialog v-model="showStatusDetailsDialog" max-width="600">
+    <v-card>
+      <v-card-title class="headline">Leave Status Details</v-card-title>
+      <v-card-text>
+        <v-container>
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-card class="mb-4" variant="outlined">
+                <v-card-title>Manager Status</v-card-title>
+                <v-card-text>
+                  <div class="d-flex align-center mb-2">
+                    <span class="mr-2">Status:</span>
+                    <span
+                      class="btn"
+                      :style="getStatusStyle(statusDetails.managerStatus)"
+                    >
+                      {{ getStatusText(statusDetails.managerStatus) }}
+                    </span>
+                  </div>
+                  <div v-if="statusDetails.managerDescription">
+                    <div class="font-weight-bold mb-1">Description:</div>
+                    <div>{{ statusDetails.managerDescription }}</div>
+                  </div>
+                  <div v-else class="text-grey">No manager description available</div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-card class="mb-4" variant="outlined">
+                <v-card-title>HR Status</v-card-title>
+                <v-card-text>
+                  <div class="d-flex align-center mb-2">
+                    <span class="mr-2">Status:</span>
+                    <span
+                      class="btn"
+                      :style="getStatusStyle(statusDetails.hrStatus)"
+                    >
+                      {{ getStatusText(statusDetails.hrStatus) }}
+                    </span>
+                  </div>
+                  <div v-if="statusDetails.hrDescription">
+                    <div class="font-weight-bold mb-1">Description:</div>
+                    <div>{{ statusDetails.hrDescription }}</div>
+                  </div>
+                  <div v-else class="text-grey">No HR description available</div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+        </v-container>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn
+          v-if="
+            (userStore.user.role === 3 || userStore.user.role === 5) &&
+            statusDetails.leave
+          "
+          color="primary"
+          @click="openDialogStatus(statusDetails.leave)"
+        >
+          Change Status
+        </v-btn>
+        <v-btn color="primary" text @click="showStatusDetailsDialog = false">
+          Close
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

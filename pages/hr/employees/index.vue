@@ -190,7 +190,7 @@ const showEditDialog = ref(false);
 const showEmailDialog = ref(false);
 const showDetailsDialog = ref(false);
 const editingEmployee = ref({
-  odooEmployeeId: "",
+ // odooEmployeeId: "",
   departmentId: "",
   image512: "",
   avatar512: "",
@@ -214,7 +214,7 @@ const emailTitle = ref("");
 const emailMessage = ref("");
 const employeeTotalCount = ref(0);
 const newEmployee = ref({
-  odooEmployeeId: "",
+ // odooEmployeeId: "",
   departmentId: "",
   image512: "",
   avatar512: "",
@@ -241,7 +241,7 @@ const ShowUpdateDialog = (item) => {
     item.workType != null ? item.workType.id : null;
   editingEmployee.value.directDate =
     item.directDate != null ? item.directDate.toString().split("T")[0] : null;
-  editingEmployee.value.odooEmployeeId = item.odooEmployeeId;
+  // editingEmployee.value.odooEmployeeId = item.odooEmployeeId;
   editingEmployee.value.departmentId  = item.departmentId;
   editingEmployee.value.jobTitle  = item.jobTitle;
   editingEmployee.value.gender  = item.gender;
@@ -375,7 +375,7 @@ const submitEmployee = async () => {
 
 const resetForm = () => {
   newEmployee.value = {
-    odooEmployeeId: "",
+   // odooEmployeeId: "",
     departmentId: "",
     image512: "",
     avatar512: "",
@@ -565,13 +565,13 @@ const fetchDepartments = async () => {
         <v-form @submit.prevent="submitEmployee" v-if="showAddEmployee">
           <v-container class="mb-6">
             <v-row>
-              <v-col cols="12" sm="6" md="3">
+              <!-- <v-col cols="12" sm="6" md="3">
                 <v-text-field
                   v-model="newEmployee.odooEmployeeId"
                   label="Odoo Employee ID"
                   required
                 ></v-text-field>
-              </v-col>
+              </v-col> -->
               
               <v-col cols="12" sm="6" md="3">
                 <v-text-field
@@ -761,19 +761,7 @@ const fetchDepartments = async () => {
 
         <v-container>
           <v-row class="mb-4">
-            <v-col
-              cols="12"
-              sm="12"
-              md="12"
-              class="d-flex align-center justify-space-between"
-            >
-              <!-- title -->
-              <h2 class="text-h5">Sync Employees</h2>
-              <v-btn color="primary" @click="syncEmployees" :loading="loading">
-                Sync Employees from Odoo
-              </v-btn>
-            </v-col>
-
+         
             <v-col cols="12" sm="6" md="4">
               <v-text-field
                 v-model="employeeSearchInfo.employeeName"
@@ -915,13 +903,13 @@ const fetchDepartments = async () => {
       <v-card-text>
         <v-container class="mb-6">
             <v-row>
-              <v-col cols="12" sm="6" md="3">
+              <!-- <v-col cols="12" sm="6" md="3">
                 <v-text-field
                   v-model="editingEmployee.odooEmployeeId"
                   label="Odoo Employee ID"
                   required
                 ></v-text-field>
-              </v-col>
+              </v-col> -->
               
               <v-col cols="12" sm="6" md="3">
                 <v-text-field
@@ -945,7 +933,7 @@ const fetchDepartments = async () => {
                   v-model="editingEmployee.departmentId"
                   :items="departments"
                   item-title="name"
-                  item-value="oodoDepartmentId"
+                  item-value="id"
                   label="Department"
                   clearable
                 >
@@ -1135,10 +1123,10 @@ const fetchDepartments = async () => {
               <strong>Manager:</strong>
               {{ employeeDetails?.department?.managerName || "-" }}
             </p>
-            <p>
+            <!-- <p>
               <strong>Odoo Employee ID:</strong>
               {{ employeeDetails?.odooEmployeeId || "-" }}
-            </p>
+            </p> -->
             <p><strong>Gender:</strong> {{ employeeDetails?.gender || "-" }}</p>
             <p>
               <strong>Brithday:</strong>
