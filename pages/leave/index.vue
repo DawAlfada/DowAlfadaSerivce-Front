@@ -276,6 +276,7 @@ const changeEmployeeLeavestatus = async () => {
       successMessage.value = data.message;
       fetchEmployeeLeaves();
       dialogStatus.value = false;
+      showStatusDetailsDialog.value = false;
     } else {
       errorMessage.value = data.message;
     }

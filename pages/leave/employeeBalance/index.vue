@@ -122,8 +122,8 @@ const submitBalance = async () => {
   loading.value = true;
   try {
     const url = isEditing.value
-      ? `${config.public.apiUrl}/EmployeeLeave/AddBalance?id=${editingBalanceId.value}&balance=${editingBalanceId.value}&leaveBased=${editingBalanceId.value}`
-      : `${config.public.apiUrl}/EmployeeLeave/AddBalance?id=${newBalance.value.employeeId}&balance=${newBalance.value.balance}&leaveBased=${newBalance.value.leaveBased}`;
+      ? `${config.public.apiUrl}/EmployeeLeave/AddBalance?id=${editingBalanceId.value}&balance=${editingBalanceId.value}`
+      : `${config.public.apiUrl}/EmployeeLeave/AddBalance?id=${newBalance.value.employeeId}&balance=${newBalance.value.balance}`;
 
     const method = isEditing.value ? "PUT" : "POST";
     const response = await fetch(url, {
@@ -160,11 +160,11 @@ const deleteBalance = async () => {
   deleteDialog.value = false;
   try {
     const response = await fetch(
-      `${config.public.apiUrl}/Balance/${BalanceToDelete.value.id}`,
+      `${config.public.apiUrl}/EmployeeLeave/DeleteBalance?id=${BalanceToDelete.value.id}`,
       {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${userStore.token}`, // Use the token here as well
+          Authorization: `Bearer ${userStore.token}`,
         },
       }
     );
@@ -186,7 +186,6 @@ const resetForm = () => {
   newBalance.value = {
     employeeId: null,
     balance: 0,
-    leaveBased : 0,
   };
   isEditing.value = false;
   editingBalanceId.value = null;
@@ -240,38 +239,12 @@ onMounted(() => {
                 </v-select>
               </v-col>
               
-              <v-col cols="12" sm="6" md="3">
-                <v-select
-                  v-model="newBalance.leaveBased"
-                  :items="[
-                    { text: 'Day Based Leave', value: 0 },
-                    { text: 'Hour Based Leave', value: 1 },
-                  ]"
-                  label="Leave Based"
-                  item-title="text"
-                  item-value="value"
-                  required
-                ></v-select>
-              </v-col>
+           
+        
               <v-col
                 cols="12"
                 sm="6"
                 md="3"
-                v-if="newBalance.leaveBased == 0"
-              >
-                <v-text-field
-                  type="number"
-                  v-model="newBalance.balance"
-                  label="Days"
-                  required
-                ></v-text-field>
-              </v-col>
-             
-              <v-col
-                cols="12"
-                sm="6"
-                md="3"
-                v-if="newBalance.leaveBased == 1"
               >
                 <v-text-field
                   type="number"
@@ -288,22 +261,23 @@ onMounted(() => {
               color="primary"
               class="mr-2"
             >
-              {{ isEditing ? "Update Leave Type" : "Create Leave Type" }}
+              {{ isEditing ? "Update Leave Type" : "Create Balance" }}
             </v-btn>
             <v-btn @click="resetForm" color="secondary" :disabled="loading"
               >Cancel</v-btn
             >
           </v-container>
         </v-form>
+
+
+        
         <v-container>
       
           <v-table density="compact" class="custom-table">
             <thead>
               <tr>
                 <th class="text-left">Employee Name</th>
-                <th class="text-left">Days</th>
                 <th class="text-left">Hours</th>
-                <th class="text-left">Leave Based</th>
                 <th class="text-left">Year</th>
                 <th class="text-left">Month</th>
                 <th class="text-left">Actions</th>
@@ -313,15 +287,10 @@ onMounted(() => {
               <tr
                 v-for="item in filteredBalance"
                 :key="item.id"
-                :class="{
-                  'highlight-row': item.leaveBased === 0,
-                  'default-row': item.leaveBased !== 0,
-                }"
+               
               >
                 <td>{{ item.employee.name }}</td>
-                <td>{{ item.leaveBased === 0 ? item.days  + " " + "Day" : "-"}}</td>
-                <td>{{ item.leaveBased === 1 ? item.hours + " " + "Hour" : "-"}}</td>
-                <td>{{ item.leaveBased === 0 ? 'Day Based' : 'Hour Based' }}</td>
+                <td>{{ item.hours + " " + "Hours"}}</td>
                 <td>{{ item.year }}</td>
                 <td>{{ item.month }}</td>
                
