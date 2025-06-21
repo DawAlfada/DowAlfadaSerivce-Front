@@ -57,6 +57,7 @@ const newVacationType = ref({
   leaveDaysInYear: null,
   hoursPerMonth: null,
   isActive: true,
+  isAttachmentRequired: false,
 });
 const isEditing = ref(false);
 const editingVacationTypeId = ref(null);
@@ -190,10 +191,17 @@ const deleteVacationType = async () => {
 
 const resetForm = () => {
   newVacationType.value = {
-    VacationTypeName: "",
-    startDate: "",
-    endDate: "",
+    name: "",
+    workDaysInWeek: "",
+    leaveDaysInYear: "",
+    leaveBased: 0,
+    isWithoutSalary: false,
+    isDependVacationBalance: false,
+    workTypeIds: [],
+    leaveDaysInYear: null,
+    hoursPerMonth: null,
     isActive: true,
+    isAttachmentRequired: false,
   };
   isEditing.value = false;
   editingVacationTypeId.value = null;
@@ -344,6 +352,20 @@ onMounted(() => {
                   required
                 ></v-text-field>
               </v-col>
+
+              <v-col cols="12" sm="6" md="3">
+                <v-select
+                  v-model="newVacationType.isAttachmentRequired"
+                  :items="[
+                    { text: 'Attachment Required', value: true },
+                    { text: 'Attachment Not Required', value: false },
+                  ]"
+                  label="Is Attachment Required"
+                  item-title="text"
+                  item-value="value"
+                  required
+                ></v-select>
+              </v-col>
             </v-row>
 
             <v-btn
@@ -378,6 +400,7 @@ onMounted(() => {
                 <th class="text-left">Hours Per Month</th>
                 <th class="text-left">Leave Based</th>
                 <th class="text-left">Is Depend Vacation Balance</th>
+                <th class="text-left">Is Attachment Required</th>
                 <th class="text-left">Insert Date</th>
                 <th class="text-left">Actions</th>
               </tr>
@@ -439,6 +462,14 @@ onMounted(() => {
                   >
                   <span v-else class="hour-based"
                     >Not Depend Vacation Balance</span
+                  >
+                </td>
+                <td>
+                  <span v-if="item.isAttachmentRequired" class="day-based"
+                    >Attachment Required</span
+                  >
+                  <span v-else class="hour-based"
+                    >Attachment Not Required</span
                   >
                 </td>
                 <td>{{ item.createdAt.split("T")[0] }}</td>

@@ -228,16 +228,17 @@ const fetchHolidays = async () => {
 
 const VacationBaseType = ref(null);
 const vacationFullInfo = ref(null);
+const selectedVacationType = ref(null); // إضافة متغير لتتبع نوع الإجازة المختار
 
 const changeVacationType = (event) => {
   console.log(event);
   newEmployeeLeave.value.vacationTypeId = event;
-  VacationBaseType.value = VacationType.value.find(
-    (x) => x.id == event
-  ).leaveBased;
+  const selectedType = VacationType.value.find((x) => x.id == event);
+  VacationBaseType.value = selectedType.leaveBased;
+  selectedVacationType.value = selectedType; // تخزين معلومات نوع الإجازة المختار
 
   getLeaveTypeDeitelsById();
-  vacationFullInfo.value = VacationType.value.find((x) => x.id == event);
+  vacationFullInfo.value = selectedType;
 };
 
 const downloadAttachment = (url) => {
@@ -405,6 +406,53 @@ const submitEmployeeLeave = async () => {
     errorMessage.value = "Please select a Vacation Type";
     return;
   }
+
+  // Check if dates are required for day-based leave
+  if (leaveTypeInfo.value.leaveBased == 0) {
+    if (!newEmployeeLeave.value.startDate) {
+      errorMessage.value = "Start Date is required for day-based leave";
+      return;
+    }
+    if (!newEmployeeLeave.value.endDate) {
+      errorMessage.value = "End Date is required for day-based leave";
+      return;
+    }
+  }
+
+  // Check if times are required for hour-based leave
+  if (leaveTypeInfo.value.leaveBased == 1) {
+    if (!newEmployeeLeave.value.startTime) {
+      errorMessage.value = "Start Time is required for hour-based leave";
+      return;
+    }
+    if (!newEmployeeLeave.value.endTime) {
+      errorMessage.value = "End Time is required for hour-based leave";
+      return;
+    }
+  }
+
+  // Check if dates are valid (not in the past)
+  if (leaveTypeInfo.value.leaveBased == 0 && newEmployeeLeave.value.startDate) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startDate = new Date(newEmployeeLeave.value.startDate);
+    
+    if (startDate < today) {
+      errorMessage.value = "Start Date cannot be in the past";
+      return;
+    }
+  }
+
+  // Check if times are valid (not in the past for today)
+  if (leaveTypeInfo.value.leaveBased == 1 && newEmployeeLeave.value.startTime) {
+    const now = new Date();
+    const startTime = new Date(newEmployeeLeave.value.startTime);
+    
+    if (startTime < now) {
+      errorMessage.value = "Start Time cannot be in the past";
+      return;
+    }
+  }
  
   console.log(
       new Date(newEmployeeLeave.value.endDate) -
@@ -460,6 +508,14 @@ const submitEmployeeLeave = async () => {
   if (!newEmployeeLeave.value.description) {
     errorMessage.value = "Please fill out description fields";
     return;
+  }
+
+  // Check if attachment is required
+  if (selectedVacationType.value && selectedVacationType.value.isAttachmentRequired) {
+    if (!newEmployeeLeave.value.attachmentFile) {
+      errorMessage.value = "Attachment is required for this leave type. Please upload a file.";
+      return;
+    }
   }
 
   // Check for holidays
@@ -646,6 +702,8 @@ const resetForm = () => {
   };
   isEditing.value = false;
   editingLeaveId.value = null;
+  selectedVacationType.value = null; // إعادة تعيين نوع الإجازة المختار
+  VacationBaseType.value = null;
 };
 
 const showStatusDetails = (leave) => {
@@ -709,6 +767,15 @@ onMounted(() => {
             </div>
             <div class="mt-2 text-caption">
               <strong>Note:</strong> Cannot request leave on official holidays or Fridays
+            </div>
+          </v-alert>
+        </div>
+
+        <!-- Attachment Required Alert -->
+        <div v-if="selectedVacationType && selectedVacationType.isAttachmentRequired">
+          <v-alert title="Attachment Required" type="warning" class="m-5">
+            <div>
+              <strong>This leave type requires an attachment.</strong> Please upload a file before submitting your leave request.
             </div>
           </v-alert>
         </div>
@@ -798,6 +865,8 @@ onMounted(() => {
                   label="Attach File"
                   accept="image/*"
                   @change="getFile($event)"
+                  :required="selectedVacationType && selectedVacationType.isAttachmentRequired"
+                  :rules="selectedVacationType && selectedVacationType.isAttachmentRequired ? [v => !!v || 'Attachment is required'] : []"
                 ></v-file-input>
               </v-col>
             </v-row>
@@ -998,6 +1067,7 @@ onMounted(() => {
                         Leave.endDate != null ? formatDate(Leave.endDate) : '';
                       newEmployeeLeave.attachmentFile = null;
                       VacationBaseType = Leave.vacationType.leaveBased;
+                      selectedVacationType = Leave.vacationType;
                     "
                     class="ma-2"
                   />
