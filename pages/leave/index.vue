@@ -8,6 +8,7 @@ const config = useRuntimeConfig();
 const userStore = useUserStore();
 const employeeLeaves = ref([]);
 const VacationType = ref([]);
+const holidays = ref([]);
 
 const totalCount = ref(0);
 const loading = ref(false);
@@ -204,6 +205,27 @@ const fetchVacationType = async () => {
   }
 };
 
+const fetchHolidays = async () => {
+  try {
+    const currentYear = new Date().getFullYear();
+    const response = await fetch(
+      `${config.public.apiUrl}/Holiday/GetAllThisYear?year=${currentYear}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userStore.token}`,
+        },
+      }
+    );
+    const data = await response.json();
+    if (!data.error) {
+      holidays.value = data.data;
+    }
+  } catch (error) {
+    console.error("Failed to fetch holidays:", error);
+  }
+};
+
 const VacationBaseType = ref(null);
 const vacationFullInfo = ref(null);
 
@@ -290,6 +312,7 @@ const changeEmployeeLeavestatus = async () => {
 const LeaveDescription = ref("");
 
 const formatDate = (date) => {
+  if (!date) return '';
   return date.toString().split("T")[0];
 };
 
@@ -439,26 +462,18 @@ const submitEmployeeLeave = async () => {
     return;
   }
 
-  // check if total days or hours are available
-  // if (leaveTrypeInfo.value.leaveBased == 0) {
-  //   if (
-  //     leaveTypeInfo.value.totalDays - leaveTypeInfo.value.usedDays <
-  //     new Date(newEmployeeLeave.value.endDate) -
-  //       new Date(newEmployeeLeave.value.startDate)
-  //   ) {
-  //     errorMessage.value = "You don't have enough days for this leave";
-  //     return;
-  //   }
-  // } else {
-  //   if (
-  //     leaveTypeInfo.value.totalHours - leaveTypeInfo.value.usedHours <
-  //       new Date(newEmployeeLeave.value.endTime) -
-  //       new Date(newEmployeeLeave.value.startTime)
-  //   ) {
-  //     errorMessage.value = "You don't have enough hours for this leave";
-  //     return;
-  //   }
-  // }
+  // Check for holidays
+  if (newEmployeeLeave.value.startDate && newEmployeeLeave.value.endDate) {
+    const holidayCheck = checkHolidayOverlap(
+      newEmployeeLeave.value.startDate,
+      newEmployeeLeave.value.endDate
+    );
+    
+    if (holidayCheck) {
+      errorMessage.value = holidayCheck.message;
+      return;
+    }
+  }
 
   loading.value = true;
   try {
@@ -519,7 +534,73 @@ const calculateHoursDifference = (startTime, endTime) => {
   return Math.abs(end - start) / (1000 * 60 * 60);
 };
 
+const checkHolidayOverlap = (startDate, endDate) => {
+  if (!startDate || !endDate) return null;
+  
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  
+  // Check each day in the selected period
+  for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+    const currentDate = new Date(date);
+    
+    // Check if the day is not Friday (weekend)
+    if (currentDate.getDay() === 5) { // 5 = Friday
+      return {
+        isHoliday: true,
+        type: 'weekend',
+        date: currentDate.toISOString().split('T')[0],
+        message: `Cannot request leave on Friday (${currentDate.toISOString().split('T')[0]})`
+      };
+    }
+    
+    // Check official holidays
+    const overlappingHoliday = holidays.value.find(holiday => {
+      const holidayStart = new Date(holiday.date);
+      const holidayEnd = new Date(holiday.toDate);
+      return currentDate >= holidayStart && currentDate <= holidayEnd;
+    });
+    
+    if (overlappingHoliday) {
+      return {
+        isHoliday: true,
+        type: 'official',
+        date: currentDate.toISOString().split('T')[0],
+        holidayName: overlappingHoliday.name,
+        message: `Cannot request leave on official holiday: ${overlappingHoliday.name} (${currentDate.toISOString().split('T')[0]})`
+      };
+    }
+  }
+  
+  return null;
+};
 
+const checkDatesForHolidays = () => {
+  if (newEmployeeLeave.value.startDate && newEmployeeLeave.value.endDate) {
+    const holidayCheck = checkHolidayOverlap(
+      newEmployeeLeave.value.startDate,
+      newEmployeeLeave.value.endDate
+    );
+    
+    if (holidayCheck) {
+      errorMessage.value = holidayCheck.message;
+    } else {
+      errorMessage.value = "";
+    }
+  }
+};
+
+// Get current month holidays
+const currentMonthHolidays = computed(() => {
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth();
+  const currentYear = currentDate.getFullYear();
+  
+  return holidays.value.filter(holiday => {
+    const holidayDate = new Date(holiday.date);
+    return holidayDate.getMonth() === currentMonth && holidayDate.getFullYear() === currentYear;
+  });
+});
 
 const confirmDeleteLeave = (Leave) => {
   LeaveToDelete.value = Leave;
@@ -581,6 +662,7 @@ const showStatusDetails = (leave) => {
 onMounted(() => {
   fetchEmployeeLeaves();
   fetchVacationType();
+  fetchHolidays();
 });
 </script>
 
@@ -616,6 +698,21 @@ onMounted(() => {
           </v-alert>
         </div>
 
+        <!-- Holiday Information -->
+        <div v-if="currentMonthHolidays.length > 0">
+          <v-alert title="Holiday Information" type="info" class="m-5">
+            <div class="mb-2">
+              <strong>Official Holidays for this month:</strong>
+            </div>
+            <div v-for="holiday in currentMonthHolidays" :key="holiday.id" class="mb-1">
+              • {{ holiday.name }}: {{ formatDate(holiday.date) }} - {{ formatDate(holiday.toDate) }}
+            </div>
+            <div class="mt-2 text-caption">
+              <strong>Note:</strong> Cannot request leave on official holidays or Fridays
+            </div>
+          </v-alert>
+        </div>
+
         <v-form @submit.prevent="submitEmployeeLeave">
           <v-container class="mb-6">
             <v-row>
@@ -641,6 +738,7 @@ onMounted(() => {
                   label="Start Date"
                   type="date"
                   required
+                  @update:model-value="checkDatesForHolidays"
                 ></v-text-field>
               </v-col>
 
@@ -655,6 +753,7 @@ onMounted(() => {
                   label="End Date"
                   type="date"
                   required
+                  @update:model-value="checkDatesForHolidays"
                 ></v-text-field>
               </v-col>
 
@@ -859,13 +958,13 @@ onMounted(() => {
 
                 <td>
                   <v-btn
+                    icon="mdi-information"
+                    size="default"
+                    variant="elevated"
                     color="primary"
-                    variant="text"
                     @click="showStatusDetails(Leave)"
-                  >
-                    <v-icon>mdi-information</v-icon>
-                    View Details
-                  </v-btn>
+                    class="ma-2"
+                  />
                 </td>
 
                 <td>
@@ -883,6 +982,9 @@ onMounted(() => {
                   <v-btn
                     v-if="Leave.status == 0 || Leave.status == 3"
                     icon="mdi-pencil"
+                    size="default"
+                    variant="elevated"
+                    color="primary"
                     @click="
                       isEditing = true;
                       editingLeaveId = Leave.id;
@@ -897,9 +999,8 @@ onMounted(() => {
                       newEmployeeLeave.attachmentFile = null;
                       VacationBaseType = Leave.vacationType.leaveBased;
                     "
-                    color="primary"
                     class="ma-2"
-                  ></v-btn>
+                  />
 
                   <v-btn
                     v-if="
@@ -910,10 +1011,12 @@ onMounted(() => {
                       Leave.status == 4
                     "
                     icon="mdi-delete"
+                    size="default"
+                    variant="elevated"
+                    color="error"
                     @click="confirmDeleteLeave(Leave)"
-                    color="red"
                     class="ma-2"
-                  ></v-btn>
+                  />
                 </td>
               </tr>
             </tbody>

@@ -843,44 +843,40 @@ const fetchDepartments = async () => {
               </v-card-text>
               <v-card-actions class="justify-space-between pa-4">
                 <v-btn
+                  icon="mdi-pencil"
+                  size="default"
+                  variant="elevated"
                   color="primary"
-                  outlined
-                  class="mx-2"
                   @click="ShowUpdateDialog(item)"
-                >
-                  <v-icon left>mdi-pencil</v-icon>
-                  Update Info
-                </v-btn>
+                  class="ma-2"
+                />
                 <v-btn
+                  icon="mdi-key"
+                  size="default"
+                  variant="elevated"
                   color="secondary"
-                  outlined
-                  class="mx-2"
                   @click="
                     showEditDialog = true;
                     editingEmployee = item;
                   "
-                >
-                  <v-icon left>mdi-key</v-icon>
-                  Edit Password
-                </v-btn>
+                  class="ma-2"
+                />
                 <v-btn
+                  icon="mdi-email"
+                  size="default"
+                  variant="elevated"
                   color="success"
-                  outlined
-                  class="mx-2"
                   @click="openEmailDialog(item)"
-                >
-                  <v-icon left>mdi-email</v-icon>
-                  Send Email
-                </v-btn>
+                  class="ma-2"
+                />
                 <v-btn
+                  icon="mdi-information-outline"
+                  size="default"
+                  variant="elevated"
                   color="info"
-                  outlined
-                  class="mx-2"
                   @click="showDetails(item)"
-                >
-                  <v-icon left>mdi-information-outline</v-icon>
-                  Details
-                </v-btn>
+                  class="ma-2"
+                />
               </v-card-actions>
             </v-card>
           </div>

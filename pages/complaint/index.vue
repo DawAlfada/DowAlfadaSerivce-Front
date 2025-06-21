@@ -542,7 +542,14 @@ onMounted(() => {
         <span v-else>No</span>
       </td>
       <td v-if="userStore.user.role == 1 || userStore.user.role == 3 || userStore.user.role == 4 || userStore.user.role == 5">
-        <v-btn icon="mdi-delete" @click="confirmDeleteComplaint(complaint)" color="red" class="ma-2"></v-btn>
+        <v-btn 
+          icon="mdi-delete" 
+          size="default"
+          variant="elevated"
+          color="error"
+          @click="confirmDeleteComplaint(complaint)" 
+          class="ma-2"
+        />
       </td>
     </tr>
   </tbody>

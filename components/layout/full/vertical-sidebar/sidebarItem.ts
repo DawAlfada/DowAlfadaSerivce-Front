@@ -1,7 +1,7 @@
 import {
     ApertureIcon,
     BrandHipchatIcon,
-    LayoutDashboardIcon, ExposurePlus1Icon, SectionIcon, CirclePlusIcon, UsersIcon 
+    LayoutDashboardIcon, ExposurePlus1Icon, SectionIcon, CirclePlusIcon, UsersIcon, CalendarIcon
 } from 'vue-tabler-icons';
 
 export interface menu {
@@ -63,6 +63,18 @@ const sidebarItem: menu[] = [
         icon: CirclePlusIcon,
         to: '/leave/leaveType',
         roles: [1, 4, 5]
+    },
+    {
+        title: 'Holidays', 
+        icon: CalendarIcon,
+        to: '/holiday',
+        roles: [1, 4, 5]
+    },
+    {
+        title: 'Holiday Calendar', 
+        icon: CalendarIcon,
+        to: '/holiday/calendar',
+        roles: [1, 2, 3, 4, 5, 6,7]
     },
 
     { header: 'Complaint' ,

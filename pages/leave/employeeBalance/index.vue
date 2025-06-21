@@ -296,12 +296,13 @@ onMounted(() => {
                
                 <td>
                   <v-btn
-                    density="default"
                     icon="mdi-delete"
+                    size="default"
+                    variant="elevated"
+                    color="error"
                     @click="confirmDeleteBalance(item)"
-                    color="red"
                     class="ma-2"
-                  ></v-btn>
+                  />
                 </td>
               </tr>
             </tbody>

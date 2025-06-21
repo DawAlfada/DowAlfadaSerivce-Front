@@ -283,24 +283,26 @@ onMounted(() => {
             <td>{{ item.createdAt.toString().split("T")[0] }}</td>
             <td>
               <v-btn
-                density="default"
                 icon="mdi-open-in-new"
+                size="default"
+                variant="elevated"
+                color="success"
                 @click="
                   isEditing = true;
                   editingWorkTypeId = item.id;
                   newWorkType = { ...item };
                 "
-                color="success"
                 class="ma-2"
-              ></v-btn>
+              />
 
               <v-btn
-                density="default"
                 icon="mdi-delete"
+                size="default"
+                variant="elevated"
+                color="error"
                 @click="confirmdeleteWorkType(item)"
-                color="red"
                 class="ma-2"
-              ></v-btn>
+              />
             </td>
           </tr>
         </tbody>
