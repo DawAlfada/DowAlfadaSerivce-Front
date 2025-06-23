@@ -595,7 +595,7 @@ const fetchDepartments = async () => {
                   v-model="newEmployee.departmentId"
                   :items="departments"
                   item-title="name"
-                  item-value="oodoDepartmentId"
+                  item-value="id"
                   label="Department"
                   clearable
                 >
