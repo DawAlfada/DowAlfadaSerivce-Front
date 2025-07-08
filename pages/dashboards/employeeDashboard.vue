@@ -76,6 +76,7 @@
                     <th class="text-left">Total Count</th>
                     <th class="text-left">Used Count</th>
                     <th class="text-left">Remaining Count</th>
+                    <th class="text-left">Month</th>
                     <th class="text-left">Year</th>
                   </tr>
                 </thead>
@@ -85,6 +86,7 @@
                     <td class="text-left">{{ item.total }}</td>
                     <td class="text-left">{{ item.leaveHoursCount }}</td>
                     <td class="text-left">{{ item.remainingHoursCount }}</td>
+                    <td class="text-left">{{ item.month }}</td>
                     <td class="text-left">{{ item.year }}</td>
                   </tr>
                 </tbody>

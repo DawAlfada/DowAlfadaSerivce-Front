@@ -283,6 +283,47 @@ const sendEmail = async () => {
     showEmailDialog.value = false;
   }
 };
+
+const showDeleteDialog = ref(false);
+const departmentToDelete = ref(null);
+
+const openDeleteDialog = (department) => {
+  departmentToDelete.value = department;
+  showDeleteDialog.value = true;
+};
+
+const deleteDepartment = async () => {
+  if (!departmentToDelete.value) return;
+  loading.value = true;
+  errorMessage.value = null;
+  successMessage.value = null;
+
+  try {
+    const response = await fetch(
+      `${config.public.apiUrl}/Department/${departmentToDelete.value.oodoDepartmentId}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userStore.token}`,
+        },
+      }
+    );
+    if (response.ok) {
+      successMessage.value = "Department deleted successfully";
+      fetchDepartments();
+    } else {
+      const data = await response.json().catch(() => null);
+      throw new Error(data?.error || "Failed to delete department");
+    }
+  } catch (error) {
+    errorMessage.value = error.message || "Failed to delete department";
+  } finally {
+    loading.value = false;
+    showDeleteDialog.value = false;
+    departmentToDelete.value = null;
+  }
+};
 </script>
 
 <template>
@@ -337,7 +378,7 @@ const sendEmail = async () => {
                   v-model="newDepartment.parentId"
                   :items="allDepartments"
                   item-title="name"
-                  item-value="oodoDepartmentId"
+                  item-value="id"
                   label="Parent Department"
                   clearable
                 >
@@ -457,6 +498,13 @@ const sendEmail = async () => {
       >
       Edit
        </v-btn>
+      <v-btn
+        color="error"
+        class="action-button"
+        icon="mdi-delete"
+        @click="openDeleteDialog(item)"
+        :title="'Delete Department'"
+      />
     </v-card-actions>
   </v-card>
 </div>
@@ -515,7 +563,7 @@ const sendEmail = async () => {
                   v-model="departmentInfo.parentId"
                   :items="allDepartments"
                   item-title="name"
-                  item-value="oodoDepartmentId"
+                  item-value="id"
                   label="Parent Department"
                   clearable
 
@@ -558,6 +606,21 @@ const sendEmail = async () => {
         <v-btn :loading="loading" color="primary" @click="sendEmail"
           >Send</v-btn
         >
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <v-dialog v-model="showDeleteDialog" max-width="400px">
+    <v-card>
+      <v-card-title class="headline">Confirm Deletion</v-card-title>
+      <v-card-text>
+        Are you sure you want to delete department
+        <span class="font-weight-bold">{{ departmentToDelete?.name }}</span>?
+        This action cannot be undone.
+      </v-card-text>
+      <v-card-actions>
+        <v-btn color="secondary" text @click="showDeleteDialog = false">Cancel</v-btn>
+        <v-btn color="error" :loading="loading" @click="deleteDepartment">Delete</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

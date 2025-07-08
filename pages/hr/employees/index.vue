@@ -544,6 +544,47 @@ const fetchDepartments = async () => {
     errorMessage.value = "Failed to fetch departments";
   }
 };
+
+const showDeleteDialog = ref(false);
+const employeeToDelete = ref(null);
+
+const openDeleteDialog = (employee) => {
+  employeeToDelete.value = employee;
+  showDeleteDialog.value = true;
+};
+
+const deleteEmployee = async () => {
+  if (!employeeToDelete.value) return;
+  loading.value = true;
+  errorMessage.value = null;
+  successMessage.value = null;
+
+  try {
+    const response = await fetch(
+      `${config.public.apiUrl}/Employee?id=${employeeToDelete.value.id}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userStore.token}`,
+        },
+      }
+    );
+    if (response.ok) {
+      successMessage.value = "Employee deleted successfully";
+      fetchEmployees();
+    } else {
+      const data = await response.json().catch(() => null);
+      throw new Error(data?.error || "Failed to delete employee");
+    }
+  } catch (error) {
+    errorMessage.value = error.message || "Failed to delete employee";
+  } finally {
+    loading.value = false;
+    showDeleteDialog.value = false;
+    employeeToDelete.value = null;
+  }
+};
 </script>
 
 <template>
@@ -774,7 +815,7 @@ const fetchDepartments = async () => {
                 v-model="employeeSearchInfo.departmentId"
                 :items="departments"
                 item-title="name"
-                item-value="oodoDepartmentId"
+                item-value="id"
                 label="Department"
                 clearable
                 @update:model-value="selectedDepartment($event)"
@@ -876,6 +917,15 @@ const fetchDepartments = async () => {
                   color="info"
                   @click="showDetails(item)"
                   class="ma-2"
+                />
+                <v-btn
+                  icon="mdi-delete"
+                  size="default"
+                  variant="elevated"
+                  color="error"
+                  @click="openDeleteDialog(item)"
+                  class="ma-2"
+                  :title="'Delete Employee'"
                 />
               </v-card-actions>
             </v-card>
@@ -1220,6 +1270,21 @@ const fetchDepartments = async () => {
       </v-card-actions>
     </v-card>
   </v-dialog>
+
+<v-dialog v-model="showDeleteDialog" max-width="400px">
+  <v-card>
+    <v-card-title class="headline">Confirm Deletion</v-card-title>
+    <v-card-text>
+      Are you sure you want to delete employee
+      <span class="font-weight-bold">{{ employeeToDelete?.name }}</span>?
+      This action cannot be undone.
+    </v-card-text>
+    <v-card-actions>
+      <v-btn color="secondary" text @click="showDeleteDialog = false">Cancel</v-btn>
+      <v-btn color="error" :loading="loading" @click="deleteEmployee">Delete</v-btn>
+    </v-card-actions>
+  </v-card>
+</v-dialog>
 </template>
 
 <style scoped>

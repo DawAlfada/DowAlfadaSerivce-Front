@@ -111,7 +111,7 @@ const openDialogStatus = (info) => {
     managerDescription: "",
     hrDescription: "",
     id: info.id,
-    isManager: userStore.user.role === 3 // true for Manager (3), false for HR (5)
+    isManager: userStore.user.role
   };
 };
 const searchTerm = ref("");
@@ -140,6 +140,7 @@ const newEmployeeLeave = ref({
   endDate: "",
   startTime: "",
   endTime: "",
+  leaveDate: "", // LeaveDate for hour-based leave
   description: "",
   attachmentFile: null,
 });
@@ -545,6 +546,14 @@ const submitEmployeeLeave = async () => {
       formData.append("AttachmentFile", newEmployeeLeave.value.attachmentFile);
     }
 
+    if (leaveTypeInfo.value.leaveBased == 1) {
+      if (!newEmployeeLeave.value.leaveDate) {
+        errorMessage.value = "Leave Date is required for hour-based leave";
+        return;
+      }
+      formData.append("LeaveDate", newEmployeeLeave.value.leaveDate);
+    }
+
     const url = isEditing.value
       ? `${config.public.apiUrl}/EmployeeLeave/${editingLeaveId.value}`
       : `${config.public.apiUrl}/EmployeeLeave`;
@@ -697,6 +706,7 @@ const resetForm = () => {
     endDate: "",
     startTime: "",
     endTime: "",
+    leaveDate: "",
     description: null,
     attachmentFile: null,
   };
@@ -848,6 +858,20 @@ onMounted(() => {
                   v-model="newEmployeeLeave.endTime"
                   label="End Time"
                   type="time"
+                  required
+                ></v-text-field>
+              </v-col>
+
+              <v-col
+                cols="12"
+                sm="6"
+                md="3"
+                v-if="VacationBaseType == 1 && VacationBaseType != null"
+              >
+                <v-text-field
+                  v-model="newEmployeeLeave.leaveDate"
+                  label="Leave Date"
+                  type="date"
                   required
                 ></v-text-field>
               </v-col>
@@ -1020,6 +1044,12 @@ onMounted(() => {
                     {{ formatDate(Leave.endDate) }}
                   </span>
                   <span v-else>
+                    <template v-if="Leave.leaveDate">
+                      {{ formatDate(Leave.leaveDate) }}<br>
+                    </template>
+                    <template v-else>
+                      <span class="text-error">غير محدد</span><br>
+                    </template>
                     {{ formatTime(Leave.startTime) }} -
                     {{ formatTime(Leave.endTime) }}
                   </span>

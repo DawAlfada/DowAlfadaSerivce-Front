@@ -280,6 +280,12 @@ onMounted(() => {
                     {{ formatDate(item.endDate) || "-" }}
                   </span>
                   <span v-else>
+                    <template v-if="item.leaveDate">
+                      {{ formatDate(item.leaveDate) }}<br>
+                    </template>
+                    <template v-else>
+                      <span class="text-error">-</span><br>
+                    </template>
                     {{ formatTime(item.startTime) || "-" }} -
                     {{ formatTime(item.endTime) || "-" }}
                   </span>

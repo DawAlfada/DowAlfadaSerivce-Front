@@ -410,12 +410,12 @@ onMounted(() => {
                   required
                 ></v-textarea>
               </v-col>
-              <v-col cols="12" sm="6" md="4">
+              <!-- <v-col cols="12" sm="6" md="4">
                 <v-checkbox
                   v-model="newComplaint.isHiddenName"
                   label="Hide My Identity"
                 ></v-checkbox>
-              </v-col>
+              </v-col> -->
             </v-row>
             <v-btn
               :loading="loading"
