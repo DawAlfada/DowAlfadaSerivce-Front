@@ -166,7 +166,7 @@ const editDepartment = async () => {
   successMessage.value = null;
 
   try {
-    const response = await fetch(`${config.public.apiUrl}/Department/${departmentInfo.value.oodoDepartmentId}`, {
+    const response = await fetch(`${config.public.apiUrl}/Department/${departmentInfo.value.id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -300,7 +300,7 @@ const deleteDepartment = async () => {
 
   try {
     const response = await fetch(
-      `${config.public.apiUrl}/Department/${departmentToDelete.value.oodoDepartmentId}`,
+      `${config.public.apiUrl}/Department/${departmentToDelete.value.id}`,
       {
         method: "DELETE",
         headers: {
@@ -323,6 +323,16 @@ const deleteDepartment = async () => {
     showDeleteDialog.value = false;
     departmentToDelete.value = null;
   }
+};
+
+const resetForm = () => {
+  newDepartment.value = {
+    oodoDepartmentId: "",
+    displayName: "",
+    parentId: "",
+    name: "",
+    isMaster: false,
+  };
 };
 </script>
 
@@ -414,22 +424,7 @@ const deleteDepartment = async () => {
 
         <v-container>
           <v-row class="mb-4">
-            <v-col
-              cols="12"
-              sm="12"
-              md="12"
-              class="d-flex align-center justify-space-between"
-            >
-              <!-- title -->
-              <h2 class="text-h5">Sync Departments</h2>
-              <v-btn
-                color="primary"
-                @click="syncdepartments"
-                :loading="loading"
-              >
-                Sync Departments from Odoo
-              </v-btn>
-            </v-col>
+    
 
             <v-col cols="12" sm="6" md="4">
               <v-text-field
