@@ -111,7 +111,7 @@ const openDialogStatus = (info) => {
     managerDescription: "",
     hrDescription: "",
     id: info.id,
-    isManager: userStore.user.role
+    isManager: userStore.user.role === 3 || userStore.user.role === 5 // Manager roles
   };
 };
 const searchTerm = ref("");
@@ -284,7 +284,7 @@ const changeEmployeeLeavestatus = async () => {
     
     params.append('managerDescription', statusChangeInfo.value.managerDescription || "");
     params.append('hrDescription', statusChangeInfo.value.hrDescription || "");
-    params.append('isManager', statusChangeInfo.value.isManager);
+    params.append('isManager', statusChangeInfo.value.isManager.toString());
 
     const response = await fetch(
       `${config.public.apiUrl}/EmployeeLeave/UpdateStatus?${params.toString()}`,
