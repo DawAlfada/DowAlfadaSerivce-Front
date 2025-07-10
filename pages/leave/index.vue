@@ -85,6 +85,9 @@ const complaintStatus = [
     textColor: "#FF2D55",
   },
 ];
+const user = JSON.parse(localStorage.getItem('user') || '{}');
+const isUserManager = user.isManager;
+
 
 const statusChangeInfo = ref({
   employeeLeavestatus: "",
@@ -92,7 +95,7 @@ const statusChangeInfo = ref({
   hrStatus: "",
   hrDescription: "",
   id: null,
-  isManager: true,
+  isManager : isUserManager
 });
 
 const LeaveInfo = ref({
@@ -111,7 +114,7 @@ const openDialogStatus = (info) => {
     managerDescription: "",
     hrDescription: "",
     id: info.id,
-    isManager: userStore.user.role === 3 || userStore.user.role === 5 // Manager roles
+    isManager:isUserManager
   };
 };
 const searchTerm = ref("");
@@ -268,6 +271,10 @@ const changeEmployeeLeavestatus = async () => {
       return;
     }
   }
+
+  // get user role 
+
+
 
   errorMessage.value = "";
   successMessage.value = "";
