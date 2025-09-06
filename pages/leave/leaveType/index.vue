@@ -1,4 +1,20 @@
 <script setup>
+// دالة لحساب الأيام من عدد الساعات (كل 7 ساعات = يوم)
+function getDaysFromLeaveHours(timeStr) {
+  if (!timeStr) return '';
+  // استخراج عدد الساعات من الصيغة "1400:00:00"
+  const match = timeStr.match(/^(\d+):/);
+  if (!match) return '';
+  const hours = parseInt(match[1], 10);
+  const days = Math.floor(hours / 7);
+  return days;
+}
+// دالة لمعالجة صيغة leaveHoursInYear وإزالة الفاصلة العشرية إن وجدت
+function formatLeaveHours(timeStr) {
+  if (!timeStr) return '';
+  // يحذف أي فاصلة عشرية قبل النقطتين الأولى فقط
+  return timeStr.replace(/\.(\d+):/, ':');
+}
 import { ref, onMounted, computed, watch } from "vue";
 import { useUserStore } from "@/store/user"; // Import the store
 import UiParentCard from "@/components/shared/UiParentCard.vue";
@@ -48,16 +64,12 @@ const searchTerm = ref("");
 
 const newVacationType = ref({
   name: "",
-  workDaysInWeek: "",
-  leaveDaysInYear: "",
-  leaveBased: 0,
+  leaveHoursInYear: "",
   isWithoutSalary: false,
   isDependVacationBalance: false,
-  workTypeIds: [],
-  leaveDaysInYear: null,
-  hoursPerMonth: null,
-  isActive: true,
+  leaveBased: 0,
   isAttachmentRequired: false,
+  workTypeIds: [],
 });
 const isEditing = ref(false);
 const editingVacationTypeId = ref(null);
@@ -104,26 +116,9 @@ const submitVacationType = async () => {
     errorMessage.value = "Please fill in Leave Type Name field";
     return;
   }
-
-  if (
-    newVacationType.value.leaveBased === 0 &&
-    newVacationType.value.isDependVacationBalance === false 
-  ) {
-    if (!newVacationType.value.leaveDaysInYear) {
-      errorMessage.value = "Please fill in Leave Days In Year field";
-      return;
-    }
-  
-  }
-
-  if (
-    newVacationType.value.leaveBased === 1 &&
-    !newVacationType.value.isDependVacationBalance
-  ) {
-    if (!newVacationType.value.hoursPerMonth) {
-      errorMessage.value = "Please fill in Hours Per Month field";
-      return;
-    }
+  if (!newVacationType.value.leaveHoursInYear) {
+    errorMessage.value = "Please fill in Leave Hours In Year field";
+    return;
   }
 
   loading.value = true;
@@ -133,13 +128,18 @@ const submitVacationType = async () => {
       : `${config.public.apiUrl}/VacationType`;
 
     const method = isEditing.value ? "PUT" : "POST";
+    // معالجة leaveHoursInYear قبل الإرسال
+    const vacationTypeToSend = {
+      ...newVacationType.value,
+      leaveHoursInYear: formatLeaveHours(newVacationType.value.leaveHoursInYear)
+    };
     const response = await fetch(url, {
       method,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${userStore.token}`, // Use the token for authorization
       },
-      body: JSON.stringify(newVacationType.value),
+      body: JSON.stringify(vacationTypeToSend),
     });
 
     const data = await response.json();
@@ -192,16 +192,12 @@ const deleteVacationType = async () => {
 const resetForm = () => {
   newVacationType.value = {
     name: "",
-    workDaysInWeek: "",
-    leaveDaysInYear: "",
-    leaveBased: 0,
+    leaveHoursInYear: "",
     isWithoutSalary: false,
     isDependVacationBalance: false,
-    workTypeIds: [],
-    leaveDaysInYear: null,
-    hoursPerMonth: null,
-    isActive: true,
+    leaveBased: 0,
     isAttachmentRequired: false,
+    workTypeIds: [],
   };
   isEditing.value = false;
   editingVacationTypeId.value = null;
@@ -258,13 +254,19 @@ onMounted(() => {
                   required
                 ></v-text-field>
               </v-col>
-
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="newVacationType.leaveHoursInYear"
+                  label="Leave Hours In Year (TimeSpan)"
+                  placeholder="مثال: 80:00:00"
+                  required
+                ></v-text-field>
+              </v-col>
               <v-col cols="12" sm="6" md="3">
                 <v-select
                   v-model="newVacationType.leaveBased"
                   :items="[
-                    { text: 'Day Based Leave', value: 0 },
-                    { text: 'Hour Based Leave', value: 1 },
+                    { text: 'Hour Based Leave', value: 0 },
                   ]"
                   label="Leave Based"
                   item-title="text"
@@ -272,24 +274,6 @@ onMounted(() => {
                   required
                 ></v-select>
               </v-col>
-
-              <v-col
-                cols="12"
-                sm="6"
-                md="3"
-                v-if="newVacationType.leaveBased == 0"
-              >
-                <v-select
-                  v-model="newVacationType.workTypeIds"
-                  :items="workTypes"
-                  item-title="name"
-                  item-value="id"
-                  label="Work Type"
-                  multiple
-                >
-                </v-select>
-              </v-col>
-
               <v-col cols="12" sm="6" md="3">
                 <v-select
                   v-model="newVacationType.isWithoutSalary"
@@ -303,8 +287,6 @@ onMounted(() => {
                   required
                 ></v-select>
               </v-col>
-
-              <!-- IsDependVacationBalance -->
               <v-col cols="12" sm="6" md="3">
                 <v-select
                   v-model="newVacationType.isDependVacationBalance"
@@ -318,41 +300,6 @@ onMounted(() => {
                   required
                 ></v-select>
               </v-col>
-              <v-col
-                cols="12"
-                sm="6"
-                md="3"
-                v-if="
-                
-                  ((newVacationType.leaveBased == 0) &
-                    (newVacationType.isDependVacationBalance == false))
-                "
-              >
-                <v-text-field
-                  type="number"
-                  v-model="newVacationType.leaveDaysInYear"
-                  label="Leave Days In Year"
-                  required
-                ></v-text-field>
-              </v-col>
-
-              <v-col
-                cols="12"
-                sm="6"
-                md="3"
-                v-if="
-                  (newVacationType.leaveBased == 1) &
-                  (newVacationType.isDependVacationBalance == false)
-                "
-              >
-                <v-text-field
-                  type="number"
-                  v-model="newVacationType.hoursPerMonth"
-                  label="Hours Per Month"
-                  required
-                ></v-text-field>
-              </v-col>
-
               <v-col cols="12" sm="6" md="3">
                 <v-select
                   v-model="newVacationType.isAttachmentRequired"
@@ -364,6 +311,16 @@ onMounted(() => {
                   item-title="text"
                   item-value="value"
                   required
+                ></v-select>
+              </v-col>
+              <v-col cols="12" sm="6" md="3">
+                <v-select
+                  v-model="newVacationType.workTypeIds"
+                  :items="workTypes"
+                  item-title="name"
+                  item-value="id"
+                  label="Work Types"
+                  multiple
                 ></v-select>
               </v-col>
             </v-row>
@@ -393,110 +350,79 @@ onMounted(() => {
           </v-row>
 
           <v-table density="compact" class="custom-table">
-            <thead>
-              <tr>
-                <th class="text-left">Name</th>
-                <th class="text-left">Leave Days In Year</th>
-                <th class="text-left">Hours Per Month</th>
-                <th class="text-left">Leave Based</th>
-                <th class="text-left">Is Depend Vacation Balance</th>
-                <th class="text-left">Is Attachment Required</th>
-                <th class="text-left">Insert Date</th>
-                <th class="text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="item in filteredVacationType"
-                :key="item.id"
-                :class="{
-                  'highlight-row': item.leaveBased === 0,
-                  'default-row': item.leaveBased !== 0,
-                }"
-              >
-                <td>{{ item.name }}</td>
-                <td>
-                  <span
-                    v-if="
-                      item.vacationTypeWorkTypes &&
-                      item.vacationTypeWorkTypes.length > 0 &&
-                      item.isDependVacationBalance === true &&
-                      item.leaveBased === 0
-                    "
-                    @click="showWorkTypes(item.vacationTypeWorkTypes)"
-                    class="clickable-text"
-                  >
-                    Depends on the type of work
-                  </span>
-                  <span v-else-if="item.leaveBased === 0">
-                    <span
-                    v-if="
-                      item.vacationTypeWorkTypes &&
-                      item.vacationTypeWorkTypes.length > 0 "
-                    @click="showWorkTypes(item.vacationTypeWorkTypes)"
-                    class="clickable-text"
-                  >
-                  Work Types - 
-                  </span>
-                    
-                    {{ item.leaveDaysInYear }} Day </span>
-                  <span v-else>-</span>
-                </td>
-                <td>
-                
-                  <span
-                    v-if="item.hoursPerMonth === null && item.leaveBased === 0"
-                    >-</span
-                  >
-                  <span v-else>{{ item.hoursPerMonth }} Hour</span>
-                </td>
-                <td>
-                  <span v-if="item.leaveBased === 0" class="day-based"
-                    >Day Based Leave</span
-                  >
-                  <span v-else class="hour-based">Hour Based Leave</span>
-                </td>
-                <td>
-                  <span v-if="item.isDependVacationBalance" class="day-based"
-                    >Depend Vacation Balance</span
-                  >
-                  <span v-else class="hour-based"
-                    >Not Depend Vacation Balance</span
-                  >
-                </td>
-                <td>
-                  <span v-if="item.isAttachmentRequired" class="day-based"
-                    >Attachment Required</span
-                  >
-                  <span v-else class="hour-based"
-                    >Attachment Not Required</span
-                  >
-                </td>
-                <td>{{ item.createdAt.split("T")[0] }}</td>
-                <td>
-                  <v-btn
-                    icon="mdi-open-in-new"
-                    size="default"
-                    variant="elevated"
-                    color="success"
-                    @click="
-                      isEditing = true;
-                      editingVacationTypeId = item.id;
-                      newVacationType = { ...item };
-                    "
-                    class="ma-2"
-                  />
-                  <v-btn
-                    icon="mdi-delete"
-                    size="default"
-                    variant="elevated"
-                    color="error"
-                    @click="confirmDeleteVacationType(item)"
-                    class="ma-2"
-                  />
-                </td>
-              </tr>
-            </tbody>
+              <thead>
+                <tr>
+                  <th class="text-left">Name</th>
+                  <th class="text-left">Leave Hours In Year</th>
+                  <th class="text-left">Is Without Salary</th>
+                  <th class="text-left">Is Depend Vacation Balance</th>
+                  <th class="text-left">Leave Based</th>
+                  <th class="text-left">Is Attachment Required</th>
+                  <th class="text-left">Work Types</th>
+                  <th class="text-left">Insert Date</th>
+                  <th class="text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="item in filteredVacationType"
+                  :key="item.id"
+                >
+                  <td>{{ item.name }}</td>
+                  <td>
+                    {{ formatLeaveHours(item.leaveHoursInYear) }}
+                    <span v-if="getDaysFromLeaveHours(item.leaveHoursInYear)">
+                      ({{ getDaysFromLeaveHours(item.leaveHoursInYear) }} days)
+                    </span>
+                  </td>
+                  <td>
+                    <span v-if="item.isWithoutSalary">Without Salary</span>
+                    <span v-else>With Salary</span>
+                  </td>
+                  <td>
+                    <span v-if="item.isDependVacationBalance">Depends on Vacation Balance</span>
+                    <span v-else>Does not depend on Vacation Balance</span>
+                  </td>
+                  <td>
+                    <span v-if="item.leaveBased === 0">Hour Based Leave</span>
+                  </td>
+                  <td>
+                    <span v-if="item.isAttachmentRequired">Attachment Required</span>
+                    <span v-else>Attachment Not Required</span>
+                  </td>
+                  <td>
+                    <span v-if="item.vacationTypeWorkTypes && item.vacationTypeWorkTypes.length > 0">
+                      <span v-for="(wt, idx) in item.vacationTypeWorkTypes" :key="wt.id">
+                        {{ wt.workType?.name }}<span v-if="idx < item.vacationTypeWorkTypes.length - 1">, </span>
+                      </span>
+                    </span>
+                    <span v-else>-</span>
+                  </td>
+                  <td>{{ item.createdAt.split("T")[0] }}</td>
+                  <td>
+                    <v-btn
+                      icon="mdi-open-in-new"
+                      size="default"
+                      variant="elevated"
+                      color="success"
+                      @click="
+                          isEditing = true;
+                          editingVacationTypeId = item.id;
+                          newVacationType = { ...item, leaveHoursInYear: formatLeaveHours(item.leaveHoursInYear) };
+                      "
+                      class="ma-2"
+                    />
+                    <v-btn
+                      icon="mdi-delete"
+                      size="default"
+                      variant="elevated"
+                      color="error"
+                      @click="confirmDeleteVacationType(item)"
+                      class="ma-2"
+                    />
+                  </td>
+                </tr>
+              </tbody>
           </v-table>
 
           <v-pagination

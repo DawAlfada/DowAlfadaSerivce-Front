@@ -112,17 +112,16 @@ const submitBalance = async () => {
     errorMessage.value = "Please select an employee";
     return;
   }
-
-  if (newBalance.value.leaveBased === 0 && newBalance.value.balance <= 0) {
-    errorMessage.value = "Please enter a valid number of days";
+  if (!newBalance.value.balance) {
+    errorMessage.value = "Please enter a valid balance (TimeSpan)";
     return;
   }
 
   loading.value = true;
   try {
     const url = isEditing.value
-      ? `${config.public.apiUrl}/EmployeeLeave/AddBalance?id=${editingBalanceId.value}&balance=${newBalance.value.balance}&leaveBased=${newBalance.value.leaveBased}`
-      : `${config.public.apiUrl}/EmployeeLeave/AddBalance?id=${newBalance.value.employeeId}&balance=${newBalance.value.balance}&leaveBased=${newBalance.value.leaveBased}`;
+      ? `${config.public.apiUrl}/EmployeeLeave/AddBalance?id=${editingBalanceId.value}&balance=${newBalance.value.balance}`
+      : `${config.public.apiUrl}/EmployeeLeave/AddBalance?id=${newBalance.value.employeeId}&balance=${newBalance.value.balance}`;
 
     const method = isEditing.value ? "PUT" : "POST";
     const response = await fetch(url, {
@@ -185,8 +184,7 @@ const deleteBalance = async () => {
 const resetForm = () => {
   newBalance.value = {
     employeeId: null,
-    balance: 0,
-    leaveBased: 0,
+    balance: "",
   };
   isEditing.value = false;
   editingBalanceId.value = null;
@@ -263,23 +261,10 @@ onMounted(() => {
                 </v-select>
               </v-col>
               <v-col cols="12" sm="6" md="3">
-                <v-select
-                  v-model="newBalance.leaveBased"
-                  :items="[
-                    { text: 'Day Leave Based', value: 0 },
-                    { text: 'Hour Leave Based', value: 1 },
-                  ]"
-                  item-title="text"
-                  item-value="value"
-                  label="Leave Based"
-                  required
-                ></v-select>
-              </v-col>
-              <v-col cols="12" sm="6" md="3">
                 <v-text-field
-                  type="number"
                   v-model="newBalance.balance"
-                  :label="newBalance.leaveBased === 1 ? 'Hours' : 'Days'"
+                  label="Balance (TimeSpan)"
+                  placeholder="مثال: 1400:00:00"
                   required
                 ></v-text-field>
               </v-col>
@@ -299,38 +284,37 @@ onMounted(() => {
         </v-form>
 
         <v-container>
-          <v-table density="compact" class="custom-table">
-            <thead>
-              <tr>
-                <th class="text-left">Employee Name</th>
-                <th class="text-left">Days/Hours</th>
-                <th class="text-left">Year</th>
-                <th class="text-left">Month</th>
-                <th class="text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="item in Balance" :key="item.id">
-                <td>{{ item.employee.name }}</td>
-                <td>
-                  <span v-if="item.leaveBased === 0">{{ item.days }} Days</span>
-                  <span v-else>{{ item.hours }} Hours</span>
-                </td>
-                <td>{{ item.year }}</td>
-                <td>{{ item.month }}</td>
-                <td>
-                  <v-btn
-                    icon="mdi-delete"
-                    size="default"
-                    variant="elevated"
-                    color="error"
-                    @click="confirmDeleteBalance(item)"
-                    class="ma-2"
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </v-table>
+            <v-table density="compact" class="custom-table">
+              <thead>
+                <tr>
+                  <th class="text-left">Employee Name</th>
+                  <th class="text-left">Job Title</th>
+                  <th class="text-left">Balance (TimeSpan)</th>
+                  <th class="text-left">Year</th>
+                  <th class="text-left">Month</th>
+                  <th class="text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in Balance" :key="item.id">
+                  <td>{{ item.employee.name }}</td>
+                  <td>{{ item.employee.jobTitle }}</td>
+                  <td>{{ item.hoursBalance }}</td>
+                  <td>{{ item.year }}</td>
+                  <td>{{ item.month }}</td>
+                  <td>
+                    <v-btn
+                      icon="mdi-delete"
+                      size="default"
+                      variant="elevated"
+                      color="error"
+                      @click="confirmDeleteBalance(item)"
+                      class="ma-2"
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </v-table>
 
           <v-pagination
             v-model="currentPage"

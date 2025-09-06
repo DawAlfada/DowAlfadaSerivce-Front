@@ -32,21 +32,12 @@ const searchTerm = ref("");
 
 const newWorkType = ref({
   name: "",
-  workDaysInWeek: "",
   workHoursInWeek: "",
-  leaveDaysInYear: "",
+  workHoursInYear: "",
+  monthlyIncreaseHours: "",
 });
 
-const calculatedWorkHoursInWeek = computed(() => {
-  if (newWorkType.value.workDaysInWeek) {
-    return Number(newWorkType.value.workDaysInWeek) * 7;
-  }
-  return "";
-});
-
-watch(calculatedWorkHoursInWeek, (newValue) => {
-  newWorkType.value.workHoursInWeek = newValue;
-});
+// لم يعد هناك حساب تلقائي لساعات الأسبوع
 
 const isEditing = ref(false);
 const editingWorkTypeId = ref(null);
@@ -89,22 +80,19 @@ const submitworkType = async () => {
    successMessage.value = "";
 
   if (!newWorkType.value.name) {
-    errorMessage.value = "Please fill in Work Type Name fields";
+    errorMessage.value = "Please fill in Work Type Name field";
     return;
   }
-
-  if (!newWorkType.value.workDaysInWeek) {
-    errorMessage.value = "Please fill in Work Days In Week fields";
-    return;
-  }
-
   if (!newWorkType.value.workHoursInWeek) {
-    errorMessage.value = "Please fill in Work Hours In Week fields";
+    errorMessage.value = "Please fill in Work Hours In Week field";
     return;
   }
-
-  if (!newWorkType.value.leaveDaysInYear) {
-    errorMessage.value = "Please fill in Leave Days In Year fields";
+  if (!newWorkType.value.workHoursInYear) {
+    errorMessage.value = "Please fill in Work Hours In Year field";
+    return;
+  }
+  if (!newWorkType.value.monthlyIncreaseHours) {
+    errorMessage.value = "Please fill in Monthly Increase Hours field";
     return;
   }
 
@@ -174,9 +162,9 @@ const deleteWorkType = async () => {
 const resetForm = () => {
   newWorkType.value = {
     name: "",
-    workDaysInWeek: "",
     workHoursInWeek: "",
-    leaveDaysInYear: "",
+    workHoursInYear: "",
+    monthlyIncreaseHours: "",
   };
   isEditing.value = false;
   editingWorkTypeId.value = null;
@@ -210,30 +198,31 @@ onMounted(() => {
           </v-col>
           <v-col cols="12" sm="6" md="3">
             <v-text-field
-              v-model="newWorkType.workDaysInWeek"
-              type="number"
-              label="Work Days In Week"
-              required
-            ></v-text-field>
-          </v-col>
-          <v-col cols="12" sm="6" md="3">
-            <v-text-field
               v-model="newWorkType.workHoursInWeek"
-              type="number"
-              label="Work Hours In Week"
-              readonly
-              :model-value="calculatedWorkHoursInWeek"
+              type="text"
+              label="Work Hours In Week (TimeSpan)"
+              placeholder="مثال: 08:00:00"
+              required
             ></v-text-field>
           </v-col>
           <v-col cols="12" sm="6" md="3">
             <v-text-field
-              type="number"
-              v-model="newWorkType.leaveDaysInYear"
-              label="Leave Days In Year"
+              v-model="newWorkType.workHoursInYear"
+              type="text"
+              label="Work Hours In Year (TimeSpan)"
+              placeholder="مثال: 2080:00:00"
               required
             ></v-text-field>
           </v-col>
-    
+          <v-col cols="12" sm="6" md="3">
+            <v-text-field
+              v-model="newWorkType.monthlyIncreaseHours"
+              type="text"
+              label="Monthly Increase Hours (TimeSpan)"
+              placeholder="مثال: 02:00:00"
+              required
+            ></v-text-field>
+          </v-col>
         </v-row>
         <v-btn
           :loading="loading"
@@ -244,8 +233,7 @@ onMounted(() => {
           {{ isEditing ? "Update Work Type" : "Create Work Type" }}
         </v-btn>
         <v-btn @click="resetForm" color="secondary" :disabled="loading"
-          >Cancel</v-btn
-        >
+          >Cancel</v-btn>
       </v-container>
     </v-form>
     <v-container>
@@ -263,10 +251,8 @@ onMounted(() => {
         <thead>
           <tr>
             <th class="text-left">Name</th>
-            <th class="text-left">Work Days In Week</th>
             <th class="text-left">Work Hours In Week</th>
-            <th class="text-left">Leave Days In Year</th>
-            <th class="text-left">Monthly Increase</th>
+            <th class="text-left">Work Hours In Year</th>
             <th class="text-left">Monthly Increase Hours</th>
             <th class="text-left">Insert Date</th>
             <th class="text-left">Actions</th>
@@ -275,12 +261,10 @@ onMounted(() => {
         <tbody>
           <tr v-for="item in filteredWorkTypes" :key="item.id">
             <td>{{ item.name }}</td>
-            <td>{{ item.workDaysInWeek }}</td>
             <td>{{ item.workHoursInWeek }}</td>
-            <td>{{ item.leaveDaysInYear }}</td>
-            <td>{{ parseFloat(item.monthlyIncrease).toFixed(2) }}</td>
-            <td>{{ parseFloat(item.monthlyIncreaseHours).toFixed(2) }}</td>
-            <td>{{ item.createdAt.toString().split("T")[0] }}</td>
+            <td>{{ item.workHoursInYear }}</td>
+            <td>{{ item.monthlyIncreaseHours }}</td>
+            <td>{{ item.createdAt?.toString().split("T")[0] }}</td>
             <td>
               <v-btn
                 icon="mdi-open-in-new"
@@ -294,7 +278,6 @@ onMounted(() => {
                 "
                 class="ma-2"
               />
-
               <v-btn
                 icon="mdi-delete"
                 size="default"

@@ -1,4 +1,8 @@
 <script setup>
+// Helper to check for valid date
+function isValidDate(date) {
+  return date && date !== "0001-01-01T00:00:00";
+}
 import { ref, onMounted, computed, watch } from "vue";
 import { useUserStore } from "@/store/user";
 import UiParentCard from "@/components/shared/UiParentCard.vue";
@@ -139,6 +143,7 @@ watch(
 
 const newEmployeeLeave = ref({
   vacationTypeId: null,
+  usageType: "day", // "day" or "hour"
   startDate: "",
   endDate: "",
   startTime: "",
@@ -415,8 +420,9 @@ const submitEmployeeLeave = async () => {
     return;
   }
 
+
   // Check if dates are required for day-based leave
-  if (leaveTypeInfo.value.leaveBased == 0) {
+  if (newEmployeeLeave.value.usageType === "day") {
     if (!newEmployeeLeave.value.startDate) {
       errorMessage.value = "Start Date is required for day-based leave";
       return;
@@ -425,10 +431,33 @@ const submitEmployeeLeave = async () => {
       errorMessage.value = "End Date is required for day-based leave";
       return;
     }
+    // Check if dates are valid (not in the past)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startDate = new Date(newEmployeeLeave.value.startDate);
+    if (startDate < today) {
+      errorMessage.value = "Start Date cannot be in the past";
+      return;
+    }
+    // Check enough days
+    if (leaveTypeInfo.value.totalDays < calculateDaysDifference(
+      newEmployeeLeave.value.startDate,
+      newEmployeeLeave.value.endDate
+    )) {
+      errorMessage.value = "You don't have enough days for this leave";
+      return;
+    }
+    // Check end date after start date
+    if (newEmployeeLeave.value.endDate && newEmployeeLeave.value.startDate) {
+      if (new Date(newEmployeeLeave.value.endDate) < new Date(newEmployeeLeave.value.startDate)) {
+        errorMessage.value = "End Date cannot be less than Start Date";
+        return;
+      }
+    }
   }
 
   // Check if times are required for hour-based leave
-  if (leaveTypeInfo.value.leaveBased == 1) {
+  if (newEmployeeLeave.value.usageType === "hour") {
     if (!newEmployeeLeave.value.startTime) {
       errorMessage.value = "Start Time is required for hour-based leave";
       return;
@@ -437,79 +466,27 @@ const submitEmployeeLeave = async () => {
       errorMessage.value = "End Time is required for hour-based leave";
       return;
     }
-  }
-
-  // Check if dates are valid (not in the past)
-  if (leaveTypeInfo.value.leaveBased == 0 && newEmployeeLeave.value.startDate) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const startDate = new Date(newEmployeeLeave.value.startDate);
-    
-    if (startDate < today) {
-      errorMessage.value = "Start Date cannot be in the past";
-      return;
-    }
-  }
-
-  // Check if times are valid (not in the past for today)
-  if (leaveTypeInfo.value.leaveBased == 1 && newEmployeeLeave.value.startTime) {
+    // Check if times are valid (not in the past for today)
     const now = new Date();
     const startTime = new Date(newEmployeeLeave.value.startTime);
-    
     if (startTime < now) {
       errorMessage.value = "Start Time cannot be in the past";
       return;
     }
-  }
- 
-  console.log(
-      new Date(newEmployeeLeave.value.endDate) -
-        new Date(newEmployeeLeave.value.startDate));
-
-  console.log(leaveTypeInfo.value.totalDays);   
-  console.log(newEmployeeLeave.value.endDate);   
-  console.log(newEmployeeLeave.value.startDate);   
-
-  if (leaveTypeInfo.value.leaveBased == 0) {
-    if (
-      leaveTypeInfo.value.totalDays < calculateDaysDifference(
-        newEmployeeLeave.value.startDate,
-        newEmployeeLeave.value.endDate
-      )) {
-      errorMessage.value = "You don't have enough days for this leave";
-      return;
-    }
-  } 
-  else {
-    if (
-      leaveTypeInfo.totalHours <
-      calculateHoursDifference(
-        newEmployeeLeave.value.startTime,
-        newEmployeeLeave.value.endTime
-      )
-    ) {
+    // Check enough hours
+    if (leaveTypeInfo.value.totalHours < calculateHoursDifference(
+      newEmployeeLeave.value.startTime,
+      newEmployeeLeave.value.endTime
+    )) {
       errorMessage.value = "You don't have enough hours for this leave";
       return;
     }
-  }
-
-  if (newEmployeeLeave.value.endDate && newEmployeeLeave.value.startDate) {
-    if (
-      new Date(newEmployeeLeave.value.endDate) <
-      new Date(newEmployeeLeave.value.startDate)
-    ) {
-      errorMessage.value = "End Date cannot be less than Start Date";
-      return;
-    }
-  }
-
-  if (newEmployeeLeave.value.endTime && newEmployeeLeave.value.startTime) {
-    if (
-      new Date(newEmployeeLeave.value.endTime) <
-      new Date(newEmployeeLeave.value.startTime)
-    ) {
-      errorMessage.value = "End Time cannot be less than Start Time";
-      return;
+    // Check end time after start time
+    if (newEmployeeLeave.value.endTime && newEmployeeLeave.value.startTime) {
+      if (new Date(newEmployeeLeave.value.endTime) < new Date(newEmployeeLeave.value.startTime)) {
+        errorMessage.value = "End Time cannot be less than Start Time";
+        return;
+      }
     }
   }
 
@@ -548,6 +525,9 @@ const submitEmployeeLeave = async () => {
     formData.append("StartTime", newEmployeeLeave.value.startTime);
     formData.append("EndTime", newEmployeeLeave.value.endTime);
     formData.append("Description", newEmployeeLeave.value.description);
+    formData.append("UsageType", newEmployeeLeave.value.usageType);
+    // leaveDate for hour-based leave
+    formData.append("LeaveDate", newEmployeeLeave.value.leaveDate);
 
     if (newEmployeeLeave.value.attachmentFile) {
       formData.append("AttachmentFile", newEmployeeLeave.value.attachmentFile);
@@ -709,6 +689,7 @@ const deleteLeave = async () => {
 const resetForm = () => {
   newEmployeeLeave.value = {
     vacationTypeId: null,
+    usageType: "day", // تعيين القيمة الأولية بشكل صريح
     startDate: "",
     endDate: "",
     startTime: "",
@@ -753,16 +734,24 @@ onMounted(() => {
         }}</v-alert>
 
         <div v-if="leaveTypeInfo && leaveTypeIsError == false">
-          <v-alert title="Attention" type="info" class="m-5">
-            <div v-if="leaveTypeInfo.leaveBased == 0">
-              This type of leave total days in the year is
-              {{ leaveTypeInfo.totalDays }} and you used
-              {{ leaveTypeInfo.usedDays }} days.
+          <v-alert title="Leave Information" type="info" class="m-5">
+            <div><strong>Leave Name:</strong> {{ leaveTypeInfo.name }}</div>
+            <div><strong>Employee:</strong> {{ leaveTypeInfo.employeeName }}</div>
+            <div><strong>Used Hours:</strong> {{ leaveTypeInfo.usedHours }}</div>
+            <div><strong>Remaining Hours:</strong> {{ leaveTypeInfo.remainingHours }}</div>
+            <div><strong>Total Hours:</strong> {{ leaveTypeInfo.totalHours }}</div>
+            <div v-if="leaveTypeInfo.isWithoutSalary" class="mt-2 text-warning">
+              <strong>Note:</strong> This leave is without salary.
             </div>
-            <div v-else>
-              This type of leave total hours in the month is
-              {{ leaveTypeInfo.totalHours }} and you used
-              {{ leaveTypeInfo.usedHours }} hours.
+            <div v-if="leaveTypeInfo.isDependVacationBalance" class="mt-2 text-info">
+              <strong>Note:</strong> This leave depends on your vacation balance.
+            </div>
+            <div v-if="leaveTypeInfo.isAttachmentRequired" class="mt-2 text-warning">
+              <strong>Note:</strong> Attachment is required for this leave type.
+            </div>
+            <div class="mt-2">
+              <strong>Month:</strong> {{ leaveTypeInfo.month }}
+              <strong>Year:</strong> {{ leaveTypeInfo.year }}
             </div>
           </v-alert>
         </div>
@@ -811,11 +800,24 @@ onMounted(() => {
                   @update:model-value="changeVacationType($event)"
                 ></v-select>
               </v-col>
+               <v-col cols="12" sm="6" md="3">
+                <v-select
+                 v-model="newEmployeeLeave.usageType"
+                  :items="[
+                { text: 'By Day', value: 'day' },
+                    { text: 'By Hour', value: 'hour' }
+                  ]"
+                  label="Usage Type"
+                  item-title="text"
+                  item-value="value"
+                  required
+                ></v-select>
+              </v-col>
               <v-col
                 cols="12"
                 sm="6"
                 md="3"
-                v-if="VacationBaseType == 0 && VacationBaseType != null"
+                v-if="newEmployeeLeave.usageType === 'day'"
               >
                 <v-text-field
                   v-model="newEmployeeLeave.startDate"
@@ -830,7 +832,7 @@ onMounted(() => {
                 cols="12"
                 sm="6"
                 md="3"
-                v-if="VacationBaseType == 0 && VacationBaseType != null"
+                v-if="newEmployeeLeave.usageType === 'day'"
               >
                 <v-text-field
                   v-model="newEmployeeLeave.endDate"
@@ -845,7 +847,7 @@ onMounted(() => {
                 cols="12"
                 sm="6"
                 md="3"
-                v-if="VacationBaseType == 1 && VacationBaseType != null"
+                v-if="newEmployeeLeave.usageType === 'hour'"
               >
                 <v-text-field
                   v-model="newEmployeeLeave.startTime"
@@ -859,7 +861,7 @@ onMounted(() => {
                 cols="12"
                 sm="6"
                 md="3"
-                v-if="VacationBaseType == 1 && VacationBaseType != null"
+                v-if="newEmployeeLeave.usageType === 'hour'"
               >
                 <v-text-field
                   v-model="newEmployeeLeave.endTime"
@@ -873,7 +875,7 @@ onMounted(() => {
                 cols="12"
                 sm="6"
                 md="3"
-                v-if="VacationBaseType == 1 && VacationBaseType != null"
+                v-if="newEmployeeLeave.usageType === 'hour'"
               >
                 <v-text-field
                   v-model="newEmployeeLeave.leaveDate"
@@ -1039,29 +1041,27 @@ onMounted(() => {
                   >
                 </td>
                 <td>
-                  <span v-if="Leave.vacationType.leaveBased == 0"
-                    >Day Leave Based</span
-                  >
+                  <span v-if="Leave.usageType === 'day'">Day Leave Based</span>
                   <span v-else>Hour Leave Based</span>
                 </td>
 
                 <td>
-                  <span v-if="Leave.vacationType.leaveBased == 0">
-                    {{ formatDate(Leave.startDate) }} -
-                    {{ formatDate(Leave.endDate) }}
-                  </span>
-                  <span v-else>
+                  <span v-if="Leave.usageType === 'hour'">
                     <template v-if="Leave.leaveDate">
                       {{ formatDate(Leave.leaveDate) }}<br>
                     </template>
-                    <template v-else>
-                      <span class="text-error">غير محدد</span><br>
+                    <template v-if="!isValidDate(Leave.startDate) && !isValidDate(Leave.endDate)">
+                      {{ formatTime(Leave.startTime) }} - {{ formatTime(Leave.endTime) }}
                     </template>
-                    {{ formatTime(Leave.startTime) }} -
-                    {{ formatTime(Leave.endTime) }}
+                    <template v-else>
+                      {{ formatDate(Leave.startDate) }} - {{ formatDate(Leave.endDate) }}<br>
+                      {{ formatTime(Leave.startTime) }} - {{ formatTime(Leave.endTime) }}
+                    </template>
+                  </span>
+                  <span v-else>
+                    {{ formatDate(Leave.startDate) }} - {{ formatDate(Leave.endDate) }}
                   </span>
                 </td>
-
                 <td>
                   <v-btn
                     icon="mdi-information"

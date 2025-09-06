@@ -25,41 +25,7 @@
         <CountCard :title="formatKey(key)" :count="value" color="#ff7043" />
       </v-col>
     </v-row>
-    <hr class="m-1" />
-    <v-row dense>
-      <v-col cols="12">
-        <v-card>
-          <v-card-title class="text-center font-weight-bold">
-            Leave Days Counts
-          </v-card-title>
-          <v-card-text>
-            <v-table density="compact" class="custom-table">
-              <template v-slot:default>
-                <thead>
-                  <tr>
-                    <th class="text-left">Name</th>
-                    <th class="text-left">Total Count</th>
-                    <th class="text-left">Used Count</th>
-                    <th class="text-left">Remaining Count</th>
-                    <th class="text-left">Year</th>
 
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(item, index) in dataLeaveCounts" :key="index">
-                    <td class="text-left">{{ item.leaveTypeName }}</td>
-                    <td class="text-left">{{ item.total }}</td>
-                    <td class="text-left">{{ item.leaveDaysCount }}</td>
-                    <td class="text-left">{{ item.remainingDaysCount }}</td>
-                    <td class="text-left">{{ item.year }}</td>
-                  </tr>
-                </tbody>
-              </template>
-            </v-table>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
     <hr class="m-1" />
     <v-row dense>
       <v-col cols="12">
@@ -86,6 +52,14 @@
                     <td class="text-left">{{ item.total }}</td>
                     <td class="text-left">{{ item.leaveHoursCount }}</td>
                     <td class="text-left">{{ item.remainingHoursCount }}</td>
+                    <td class="text-left">
+                      <span v-if="!isValidDate(item.startDate) && !isValidDate(item.endDate)">
+                        {{ formatTime(item.startTime) }} - {{ formatTime(item.endTime) }}
+                      </span>
+                      <span v-else>
+                        {{ formatDate(item.startDate) }} - {{ formatDate(item.endDate) }}
+                      </span>
+                    </td>
                     <td class="text-left">{{ item.month }}</td>
                     <td class="text-left">{{ item.year }}</td>
                   </tr>
@@ -101,6 +75,27 @@
 </template>
 
 <script setup>
+// Helper to check for valid date
+function isValidDate(date) {
+  return date && date !== "0001-01-01T00:00:00";
+}
+
+// Helper to format date
+function formatDate(date) {
+  if (!isValidDate(date)) return "-";
+  return date.split("T")[0];
+}
+
+// Helper to format time
+function formatTime(time) {
+  if (!time) return "-";
+  // If time is already in HH:mm:ss or HH:mm format
+  const parts = time.split(":");
+  if (parts.length >= 2) {
+    return `${parts[0]}:${parts[1]}`;
+  }
+  return time;
+}
 import { ref, onMounted } from "vue";
 import { useUserStore } from "@/store/user";
 import { useRuntimeConfig } from "#app";
