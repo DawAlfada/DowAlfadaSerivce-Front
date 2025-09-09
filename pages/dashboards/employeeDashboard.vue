@@ -38,30 +38,24 @@
               <template v-slot:default>
                 <thead>
                   <tr>
-                    <th class="text-left">Name</th>
-                    <th class="text-left">Total Count</th>
-                    <th class="text-left">Used Count</th>
-                    <th class="text-left">Remaining Count</th>
+                    <th class="text-left">Leave Type</th>
+                    <th class="text-left">Total</th>
+                    <th class="text-left">Used</th>
+                    <th class="text-left">Remaining</th>
                     <th class="text-left">Month</th>
                     <th class="text-left">Year</th>
+                    <th class="text-left">Unit</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-for="(item, index) in dataTimeCounts" :key="index">
                     <td class="text-left">{{ item.leaveTypeName }}</td>
                     <td class="text-left">{{ item.total }}</td>
-                    <td class="text-left">{{ item.leaveHoursCount }}</td>
-                    <td class="text-left">{{ item.remainingHoursCount }}</td>
-                    <td class="text-left">
-                      <span v-if="!isValidDate(item.startDate) && !isValidDate(item.endDate)">
-                        {{ formatTime(item.startTime) }} - {{ formatTime(item.endTime) }}
-                      </span>
-                      <span v-else>
-                        {{ formatDate(item.startDate) }} - {{ formatDate(item.endDate) }}
-                      </span>
-                    </td>
+                    <td class="text-left">{{ item.leaveCount }}</td>
+                    <td class="text-left">{{ item.remainingCount }}</td>
                     <td class="text-left">{{ item.month }}</td>
                     <td class="text-left">{{ item.year }}</td>
+                    <td class="text-left">{{ item.unit }}</td>
                   </tr>
                 </tbody>
               </template>
@@ -113,7 +107,7 @@ const GetEmployeeDashboadTimeLeaveCounts = async () => {
   loading.value = true;
   try {
     const response = await fetch(
-      `${config.public.apiUrl}/Dashboad/GetEmployeeDashboadTimeLeaveCounts`,
+      `${config.public.apiUrl}/Dashboad/GetEmployeeDashboadLeaveCounts`,
       {
         headers: {
           "Content-Type": "application/json",

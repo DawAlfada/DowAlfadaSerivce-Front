@@ -42,9 +42,9 @@ const searchInfo = ref({
 });
 
 const newBalance = ref({
-  employeeId: null,
+  id: null,
   balance: 0,
-  leaveBased: 0, // 0: days, 1: hours
+  leaveBased: 0, // 0: Days, 1: Hours
 });
 const isEditing = ref(false);
 const editingBalanceId = ref(null);
@@ -108,29 +108,28 @@ const submitBalance = async () => {
   errorMessage.value = "";
   successMessage.value = "";
 
-  if (!newBalance.value.employeeId) {
+  if (!newBalance.value.id) {
     errorMessage.value = "Please select an employee";
     return;
   }
-  if (!newBalance.value.balance) {
-    errorMessage.value = "Please enter a valid balance (TimeSpan)";
+  if (newBalance.value.balance === null || newBalance.value.balance === undefined) {
+    errorMessage.value = "Please enter a valid balance";
     return;
   }
 
   loading.value = true;
   try {
     const url = isEditing.value
-      ? `${config.public.apiUrl}/EmployeeLeave/AddBalance?id=${editingBalanceId.value}&balance=${newBalance.value.balance}`
-      : `${config.public.apiUrl}/EmployeeLeave/AddBalance?id=${newBalance.value.employeeId}&balance=${newBalance.value.balance}`;
+      ? `${config.public.apiUrl}/EmployeeLeave/AddBalance?id=${editingBalanceId.value}&balance=${newBalance.value.balance}&leaveBased=${newBalance.value.leaveBased}`
+      : `${config.public.apiUrl}/EmployeeLeave/AddBalance?id=${newBalance.value.id}&balance=${newBalance.value.balance}&leaveBased=${newBalance.value.leaveBased}`;
 
     const method = isEditing.value ? "PUT" : "POST";
     const response = await fetch(url, {
       method,
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${userStore.token}`, // Use the token for authorization
+        Authorization: `Bearer ${userStore.token}`,
       },
-      body: JSON.stringify(newBalance.value),
     });
 
     const data = await response.json();
@@ -183,8 +182,9 @@ const deleteBalance = async () => {
 
 const resetForm = () => {
   newBalance.value = {
-    employeeId: null,
-    balance: "",
+    id: null,
+    balance: 0,
+    leaveBased: 0,
   };
   isEditing.value = false;
   editingBalanceId.value = null;
@@ -218,8 +218,8 @@ onMounted(() => {
           <v-container class="mb-6">
             <v-row>
               <v-col cols="12" sm="6" md="3">
-                <v-select
-                  v-model="newBalance.employeeId"
+                <v-autocomplete
+                  v-model="newBalance.id"
                   :items="employees"
                   item-title="displayName"
                   item-value="id"
@@ -228,10 +228,14 @@ onMounted(() => {
                   clearable
                   outlined
                   dense
-                  autocomplete
-                  :filter-keys="['displayName', 'name']"
-                  no-data-text="No employees found"
                   :search-input.sync="searchText"
+                  :filter="(item, queryText, itemText) => {
+                    const displayName = item.displayName ? item.displayName.toLowerCase() : '';
+                    const name = item.name ? item.name.toLowerCase() : '';
+                    const query = queryText.toLowerCase();
+                    return displayName.includes(query) || name.includes(query);
+                  }"
+                  no-data-text="No employees found"
                 >
                   <template v-slot:item="{ props, item }">
                     <v-list-item v-bind="props">
@@ -245,28 +249,28 @@ onMounted(() => {
                       </v-list-item-content>
                     </v-list-item>
                   </template>
-
-                  <template
-                    v-slot:prepend-item
-                    v-if="searchText && !employees.length"
-                  >
-                    <v-list-item>
-                      <v-list-item-content>
-                        <v-list-item-title class="text-grey">
-                          No employees match "{{ searchText }}"
-                        </v-list-item-title>
-                      </v-list-item-content>
-                    </v-list-item>
-                  </template>
-                </v-select>
+                </v-autocomplete>
               </v-col>
               <v-col cols="12" sm="6" md="3">
                 <v-text-field
                   v-model="newBalance.balance"
-                  label="Balance (TimeSpan)"
-                  placeholder="مثال: 1400:00:00"
+                  type="number"
+                  label="Balance"
                   required
                 ></v-text-field>
+              </v-col>
+              <v-col cols="12" sm="6" md="3">
+                <v-select
+                  v-model="newBalance.leaveBased"
+                  :items="[
+                    { text: 'Days', value: 0 },
+                    { text: 'Hours', value: 1 }
+                  ]"
+                  label="Leave Based"
+                  item-title="text"
+                  item-value="value"
+                  required
+                ></v-select>
               </v-col>
             </v-row>
             <v-btn
@@ -288,20 +292,19 @@ onMounted(() => {
               <thead>
                 <tr>
                   <th class="text-left">Employee Name</th>
-                  <th class="text-left">Job Title</th>
-                  <th class="text-left">Balance (TimeSpan)</th>
-                  <th class="text-left">Year</th>
-                  <th class="text-left">Month</th>
+                  <th class="text-left">Balance</th>
+                  <th class="text-left">Leave Based</th>
                   <th class="text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="item in Balance" :key="item.id">
                   <td>{{ item.employee.name }}</td>
-                  <td>{{ item.employee.jobTitle }}</td>
-                  <td>{{ item.hoursBalance }}</td>
-                  <td>{{ item.year }}</td>
-                  <td>{{ item.month }}</td>
+                  <td>{{ item.balance }}</td>
+                  <td>
+                    <span v-if="item.leaveBased === 0">Days</span>
+                    <span v-else-if="item.leaveBased === 1">Hours</span>
+                  </td>
                   <td>
                     <v-btn
                       icon="mdi-delete"

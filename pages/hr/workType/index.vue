@@ -32,9 +32,9 @@ const searchTerm = ref("");
 
 const newWorkType = ref({
   name: "",
-  workHoursInWeek: "",
-  workHoursInYear: "",
-  monthlyIncreaseHours: "",
+  workDaysInWeek: 0,
+  workDaysInYear: 0,
+  monthlyIncreaseBalanceDays: 0,
 });
 
 // لم يعد هناك حساب تلقائي لساعات الأسبوع
@@ -83,16 +83,16 @@ const submitworkType = async () => {
     errorMessage.value = "Please fill in Work Type Name field";
     return;
   }
-  if (!newWorkType.value.workHoursInWeek) {
-    errorMessage.value = "Please fill in Work Hours In Week field";
+  if (newWorkType.value.workDaysInWeek === null || newWorkType.value.workDaysInWeek === undefined) {
+    errorMessage.value = "Please fill in Work Days In Week field";
     return;
   }
-  if (!newWorkType.value.workHoursInYear) {
-    errorMessage.value = "Please fill in Work Hours In Year field";
+  if (newWorkType.value.workDaysInYear === null || newWorkType.value.workDaysInYear === undefined) {
+    errorMessage.value = "Please fill in Work Days In Year field";
     return;
   }
-  if (!newWorkType.value.monthlyIncreaseHours) {
-    errorMessage.value = "Please fill in Monthly Increase Hours field";
+  if (newWorkType.value.monthlyIncreaseBalanceDays === null || newWorkType.value.monthlyIncreaseBalanceDays === undefined) {
+    errorMessage.value = "Please fill in Monthly Increase Balance Days field";
     return;
   }
 
@@ -162,9 +162,9 @@ const deleteWorkType = async () => {
 const resetForm = () => {
   newWorkType.value = {
     name: "",
-    workHoursInWeek: "",
-    workHoursInYear: "",
-    monthlyIncreaseHours: "",
+    workDaysInWeek: 0,
+    workDaysInYear: 0,
+    monthlyIncreaseBalanceDays: 0,
   };
   isEditing.value = false;
   editingWorkTypeId.value = null;
@@ -198,28 +198,25 @@ onMounted(() => {
           </v-col>
           <v-col cols="12" sm="6" md="3">
             <v-text-field
-              v-model="newWorkType.workHoursInWeek"
-              type="text"
-              label="Work Hours In Week (TimeSpan)"
-              placeholder="مثال: 08:00:00"
+              v-model="newWorkType.workDaysInWeek"
+              type="number"
+              label="Work Days In Week"
               required
             ></v-text-field>
           </v-col>
           <v-col cols="12" sm="6" md="3">
             <v-text-field
-              v-model="newWorkType.workHoursInYear"
-              type="text"
-              label="Work Hours In Year (TimeSpan)"
-              placeholder="مثال: 2080:00:00"
+              v-model="newWorkType.workDaysInYear"
+              type="number"
+              label="Work Days In Year"
               required
             ></v-text-field>
           </v-col>
           <v-col cols="12" sm="6" md="3">
             <v-text-field
-              v-model="newWorkType.monthlyIncreaseHours"
-              type="text"
-              label="Monthly Increase Hours (TimeSpan)"
-              placeholder="مثال: 02:00:00"
+              v-model="newWorkType.monthlyIncreaseBalanceDays"
+              type="number"
+              label="Monthly Increase Balance Days"
               required
             ></v-text-field>
           </v-col>
@@ -251,9 +248,9 @@ onMounted(() => {
         <thead>
           <tr>
             <th class="text-left">Name</th>
-            <th class="text-left">Work Hours In Week</th>
-            <th class="text-left">Work Hours In Year</th>
-            <th class="text-left">Monthly Increase Hours</th>
+            <th class="text-left">Work Days In Week</th>
+            <th class="text-left">Work Days In Year</th>
+            <th class="text-left">Monthly Increase Balance Days</th>
             <th class="text-left">Insert Date</th>
             <th class="text-left">Actions</th>
           </tr>
@@ -261,9 +258,9 @@ onMounted(() => {
         <tbody>
           <tr v-for="item in filteredWorkTypes" :key="item.id">
             <td>{{ item.name }}</td>
-            <td>{{ item.workHoursInWeek }}</td>
-            <td>{{ item.workHoursInYear }}</td>
-            <td>{{ item.monthlyIncreaseHours }}</td>
+            <td>{{ item.workDaysInWeek }}</td>
+            <td>{{ item.workDaysInYear }}</td>
+            <td>{{ item.monthlyIncreaseBalanceDays }}</td>
             <td>{{ item.createdAt?.toString().split("T")[0] }}</td>
             <td>
               <v-btn

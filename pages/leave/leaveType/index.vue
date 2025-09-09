@@ -64,11 +64,11 @@ const searchTerm = ref("");
 
 const newVacationType = ref({
   name: "",
-  leaveHoursInYear: "",
-  isWithoutSalary: false,
-  isDependVacationBalance: false,
+  defaultBalance: 0,
+  isWithoutSalary: true,
+  isDependVacationBalance: true,
   leaveBased: 0,
-  isAttachmentRequired: false,
+  isAttachmentRequired: true,
   workTypeIds: [],
 });
 const isEditing = ref(false);
@@ -116,8 +116,8 @@ const submitVacationType = async () => {
     errorMessage.value = "Please fill in Leave Type Name field";
     return;
   }
-  if (!newVacationType.value.leaveHoursInYear) {
-    errorMessage.value = "Please fill in Leave Hours In Year field";
+  if (newVacationType.value.defaultBalance === null || newVacationType.value.defaultBalance === undefined) {
+    errorMessage.value = "Please fill in Default Balance field";
     return;
   }
 
@@ -192,11 +192,11 @@ const deleteVacationType = async () => {
 const resetForm = () => {
   newVacationType.value = {
     name: "",
-    leaveHoursInYear: "",
-    isWithoutSalary: false,
-    isDependVacationBalance: false,
+    defaultBalance: 0,
+    isWithoutSalary: true,
+    isDependVacationBalance: true,
     leaveBased: 0,
-    isAttachmentRequired: false,
+    isAttachmentRequired: true,
     workTypeIds: [],
   };
   isEditing.value = false;
@@ -256,9 +256,9 @@ onMounted(() => {
               </v-col>
               <v-col cols="12" sm="6" md="3">
                 <v-text-field
-                  v-model="newVacationType.leaveHoursInYear"
-                  label="Leave Hours In Year (TimeSpan)"
-                  placeholder="مثال: 80:00:00"
+                  v-model="newVacationType.defaultBalance"
+                  type="number"
+                  label="Default Balance"
                   required
                 ></v-text-field>
               </v-col>
@@ -266,7 +266,8 @@ onMounted(() => {
                 <v-select
                   v-model="newVacationType.leaveBased"
                   :items="[
-                    { text: 'Hour Based Leave', value: 0 },
+                    { text: 'Days', value: 0 },
+                    { text: 'Hours', value: 1 }
                   ]"
                   label="Leave Based"
                   item-title="text"
@@ -353,7 +354,7 @@ onMounted(() => {
               <thead>
                 <tr>
                   <th class="text-left">Name</th>
-                  <th class="text-left">Leave Hours In Year</th>
+                  <th class="text-left">Default Balance</th>
                   <th class="text-left">Is Without Salary</th>
                   <th class="text-left">Is Depend Vacation Balance</th>
                   <th class="text-left">Leave Based</th>
@@ -369,12 +370,7 @@ onMounted(() => {
                   :key="item.id"
                 >
                   <td>{{ item.name }}</td>
-                  <td>
-                    {{ formatLeaveHours(item.leaveHoursInYear) }}
-                    <span v-if="getDaysFromLeaveHours(item.leaveHoursInYear)">
-                      ({{ getDaysFromLeaveHours(item.leaveHoursInYear) }} days)
-                    </span>
-                  </td>
+                  <td>{{ item.defaultBalance }}</td>
                   <td>
                     <span v-if="item.isWithoutSalary">Without Salary</span>
                     <span v-else>With Salary</span>
@@ -384,7 +380,8 @@ onMounted(() => {
                     <span v-else>Does not depend on Vacation Balance</span>
                   </td>
                   <td>
-                    <span v-if="item.leaveBased === 0">Hour Based Leave</span>
+                    <span v-if="item.leaveBased === 0">Days</span>
+                    <span v-else-if="item.leaveBased === 1">Hours</span>
                   </td>
                   <td>
                     <span v-if="item.isAttachmentRequired">Attachment Required</span>

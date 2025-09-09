@@ -1,3 +1,4 @@
+
 <script setup>
 // Helper to check for valid date
 function isValidDate(date) {
@@ -143,14 +144,13 @@ watch(
 
 const newEmployeeLeave = ref({
   vacationTypeId: null,
-  usageType: "day", // "day" or "hour"
   startDate: "",
   endDate: "",
   startTime: "",
   endTime: "",
-  leaveDate: "", // LeaveDate for hour-based leave
   description: "",
-  attachmentFile: null,
+  leaveDate: "",
+  leaveBased: 0, // 0: Days, 1: Hours
 });
 const isEditing = ref(false);
 const editingLeaveId = ref(null);
@@ -170,8 +170,24 @@ const statusDetails = ref({
 const fetchEmployeeLeaves = async () => {
   loading.value = true;
   try {
+    // Ensure all search params are empty string if null/undefined
+    const params = {
+      Page: currentPage.value ?? '',
+      PageSize: pageSize.value ?? '',
+      VacationTypeId: searchByInfo.value.VacationTypeId ?? '',
+      StartDate: searchByInfo.value.StartDate ?? '',
+      EndDate: searchByInfo.value.EndDate ?? '',
+      StartTime: searchByInfo.value.StartTime ?? '',
+      EndTime: searchByInfo.value.EndTime ?? '',
+      Description: searchByInfo.value.Description ?? '',
+      LeaveDate: searchByInfo.value.LeaveDate ?? '',
+      LeaveBased: searchByInfo.value.LeaveBased ?? '',
+    };
+    const queryString = Object.entries(params)
+      .map(([key, val]) => `${key}=${val === null || val === undefined ? '' : val}`)
+      .join('&');
     const response = await fetch(
-      `${config.public.apiUrl}/EmployeeLeave?Page=${currentPage.value}&PageSize=${pageSize.value}&Status=${searchByInfo.value.employeeLeavestatus}&EmployeeName=${searchByInfo.value.EmployeeName}&VacationTypeName=${searchByInfo.value.VacationTypeName}&StartDate=${searchByInfo.value.StartDate}&EndDate=${searchByInfo.value.EndDate}&Status=${searchByInfo.value.Status}&LeaveBased=${searchByInfo.value.LeaveBased}`,
+      `${config.public.apiUrl}/EmployeeLeave?${queryString}`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -240,12 +256,12 @@ const vacationFullInfo = ref(null);
 const selectedVacationType = ref(null); // إضافة متغير لتتبع نوع الإجازة المختار
 
 const changeVacationType = (event) => {
-  console.log(event);
   newEmployeeLeave.value.vacationTypeId = event;
   const selectedType = VacationType.value.find((x) => x.id == event);
   VacationBaseType.value = selectedType.leaveBased;
-  selectedVacationType.value = selectedType; // تخزين معلومات نوع الإجازة المختار
-
+  selectedVacationType.value = selectedType;
+  // Set usageType automatically based on leaveBased
+  newEmployeeLeave.value.usageType = selectedType.leaveBased === 0 ? 'day' : 'hour';
   getLeaveTypeDeitelsById();
   vacationFullInfo.value = selectedType;
 };
@@ -723,6 +739,8 @@ onMounted(() => {
 </script>
 
 <template>
+    <!-- Leave Information Card -->
+    
   <v-row>
     <v-col cols="12" md="12">
       <UiParentCard title="Manage Employee Leaves">
@@ -737,9 +755,11 @@ onMounted(() => {
           <v-alert title="Leave Information" type="info" class="m-5">
             <div><strong>Leave Name:</strong> {{ leaveTypeInfo.name }}</div>
             <div><strong>Employee:</strong> {{ leaveTypeInfo.employeeName }}</div>
-            <div><strong>Used Hours:</strong> {{ leaveTypeInfo.usedHours }}</div>
-            <div><strong>Remaining Hours:</strong> {{ leaveTypeInfo.remainingHours }}</div>
-            <div><strong>Total Hours:</strong> {{ leaveTypeInfo.totalHours }}</div>
+            <div><strong>Leave Based:</strong> {{ leaveTypeInfo.leaveBased === 0 ? 'Days' : 'Hours' }}</div>
+            <div><strong>Used:</strong> {{ leaveTypeInfo.used }}</div>
+            <div><strong>Remaining:</strong> {{ leaveTypeInfo.remaining }}</div>
+            <div><strong>Total:</strong> {{ leaveTypeInfo.total }}</div>
+            <div><strong>Total Balance:</strong> {{ leaveTypeInfo.totalBalance ?? '-' }}</div>
             <div v-if="leaveTypeInfo.isWithoutSalary" class="mt-2 text-warning">
               <strong>Note:</strong> This leave is without salary.
             </div>
@@ -800,18 +820,14 @@ onMounted(() => {
                   @update:model-value="changeVacationType($event)"
                 ></v-select>
               </v-col>
-               <v-col cols="12" sm="6" md="3">
-                <v-select
-                 v-model="newEmployeeLeave.usageType"
-                  :items="[
-                { text: 'By Day', value: 'day' },
-                    { text: 'By Hour', value: 'hour' }
-                  ]"
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="newEmployeeLeave.usageType"
                   label="Usage Type"
-                  item-title="text"
-                  item-value="value"
+                  :value="selectedVacationType && selectedVacationType.leaveBased === 0 ? 'By Day' : 'By Hour'"
+                  disabled
                   required
-                ></v-select>
+                ></v-text-field>
               </v-col>
               <v-col
                 cols="12"
